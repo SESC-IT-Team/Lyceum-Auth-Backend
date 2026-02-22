@@ -20,6 +20,7 @@ dependencies = [
     "alembic>=1.14.0",
     "python-multipart>=0.0.17",
     "psycopg2-binary>=2.9.11",
+    "slowapi>=0.1.9",
 ]
 
 [tool.hatch.build.targets.wheel]
