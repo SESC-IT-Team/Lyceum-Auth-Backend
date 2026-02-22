@@ -12,11 +12,13 @@ from app.application.services.user_service import UserService
 from app.infrastructure.database import get_db
 from app.infrastructure.repositories.user_repository import UserRepository
 from app.infrastructure.repositories.refresh_token_repository import RefreshTokenRepository
-
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 security_bearer = HTTPBearer(auto_error=False)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
+limiter = Limiter(key_func=get_remote_address)
 def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
     return AuthService(
         user_repository=UserRepository(db),

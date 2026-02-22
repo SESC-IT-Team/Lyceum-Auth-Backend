@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 
 from app.domain.entities.user import User
 from app.application.services.auth_service import AuthService
@@ -10,12 +10,15 @@ from app.presentation.schemas.auth import (
     LogoutRequest,
     VerifyResponse,
 )
+from app.presentation.dependencies import limiter
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     body: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service),
 ):
