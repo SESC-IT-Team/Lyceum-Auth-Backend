@@ -12,7 +12,7 @@ from app.domain.enums.permission import get_permissions_for_role
 from app.application.interfaces.repositories import IUserRepository, IRefreshTokenRepository
 
 # Импорт классов ротации ключей
-from key_creator_rotor import KeyRotationManager, RotationJWT
+from app.application.services.key_creator_rotor import KeyRotationManager, RotationJWT
 
 logger = logging.getLogger(__name__)
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
