@@ -14,12 +14,15 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         return f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
 
-    jwt_secret_key: str = "change-me-in-production"
-    jwt_algorithm: str = "HS256"
-    jwt_access_expire_minutes: int = 30
-    jwt_refresh_expire_days: int = 7
+    jwt_secret_key: str | None = None
+    jwt_algorithm: str = "RS256"
+    jwt_access_expire_minutes: int = 15
+    jwt_refresh_expire_days: int = 3
     admin_login: str = "admin"
     admin_password: str = "admin"
+    jwt_keys_dir: str = "keys"  # Для filesystem backend
+    jwt_storage_backend: str = "environment"  # "filesystem" | "environment"
+    jwt_env_prefix: str = "JWT_KEY"  # Префикс переменных окружения
 
 
 settings = Settings()
