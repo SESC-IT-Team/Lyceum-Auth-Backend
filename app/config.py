@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
 
 
 class Settings(BaseSettings):
@@ -24,5 +25,14 @@ class Settings(BaseSettings):
     jwt_storage_backend: str = "environment"  # "filesystem" | "environment"
     jwt_env_prefix: str = "JWT_KEY"  # Префикс переменных окружения
 
+    
+    env_file_path: str = ".env"
+    
+    # Для обратной совместимости (опционально)
+    jwt_secret_key: str | None = None
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
 
 settings = Settings()
