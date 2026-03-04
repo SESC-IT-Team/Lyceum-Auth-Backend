@@ -1,5 +1,9 @@
+import logging
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -22,7 +26,7 @@ class Settings(BaseSettings):
     admin_login: str = "admin"
     admin_password: str = "admin"
     jwt_keys_dir: str = "keys"  # Для filesystem backend
-    jwt_storage_backend: str = "environment"  # "filesystem" | "environment"
+    jwt_storage_backend: str = "filesystem"  # "filesystem" | "environment"
     jwt_env_prefix: str = "JWT_KEY"  # Префикс переменных окружения
     env_file_path: str = ".env"
 

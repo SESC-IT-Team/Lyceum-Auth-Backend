@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 import secrets
 import logging
 
-from jose import JWTError, jwt
+from jose import JWTError
 from passlib.context import CryptContext
 
 from app.config import settings

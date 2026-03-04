@@ -1,4 +1,7 @@
-from jose import jwt, JWTError, ExpiredSignatureError
+import logging
+
+import jwt as pyjwt
+from jose import JWTError
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
@@ -8,6 +11,9 @@ import json
 import os
 import base64
 import re
+
+logger = logging.getLogger(__name__)
+
 
 class KeyRotationManager:
     """
@@ -32,6 +38,9 @@ class KeyRotationManager:
             os.makedirs(keys_dir, exist_ok=True)
         
         self.load_keys()
+        # При filesystem: если ключей нет — создаём первую пару при старте
+        if not self._active_kid:
+            self.rotate_keys()
 
     # ==================== Утилиты Base64 ====================
     
@@ -248,8 +257,10 @@ class KeyRotationManager:
         
         private_pem, public_pem = self.generate_key_pair(new_kid)
         
+        if self.storage_backend == "filesystem":
+            print(f"JWT ключ создан (filesystem): {new_kid}")
         # Если backend = environment, выводим инструкцию
-        if self.storage_backend == "environment":
+        elif self.storage_backend == "environment":
             print(f"\n⚠️  Backend: environment")
             print(f"Сгенерирован ключ: {new_kid}")
             print("Добавьте эти переменные в окружение:\n")
@@ -304,35 +315,53 @@ class RotationJWT:
         self.algorithm = algorithm
 
     def create_token(self, payload: Dict, expires_in: int = 3600) -> str:
-        kid, private_key, _ = self.key_manager.get_active_key()
+        kid, private_pem, _ = self.key_manager.get_active_key()
+        # При RSA-ключах принудительно использовать RS256 (защита от JWT_ALGORITHM=HS256 в .env)
+        alg = self.algorithm
+        if "PRIVATE KEY" in private_pem and alg.upper().startswith("HS"):
+            logger.warning(
+                "Алгоритм %s несовместим с RSA-ключами, используется RS256", alg
+            )
+            alg = "RS256"
+            self.algorithm = alg
         now = datetime.now()
         payload.update({
             "iat": int(now.timestamp()),
             "exp": int((now + timedelta(seconds=expires_in)).timestamp()),
             "nbf": int(now.timestamp())
         })
-        headers = {"kid": kid, "alg": self.algorithm, "typ": "JWT"}
-        return jwt.encode(payload, private_key, algorithm=self.algorithm, headers=headers)
+        headers = {"kid": kid, "alg": alg, "typ": "JWT"}
+        return pyjwt.encode(
+            payload, private_pem, algorithm=alg, headers=headers
+        )
+
+    # Алгоритмы, разрешённые при верификации (защита от algorithm confusion)
+    _ALLOWED_ALGORITHMS = ("RS256", "RS384", "RS512")
 
     def verify_token(self, token: str) -> Dict:
         try:
-            unverified_header = jwt.get_unverified_header(token)
+            unverified_header = pyjwt.get_unverified_header(token)
             kid = unverified_header.get("kid")
             if not kid:
                 raise JWTError("Отсутствует kid в заголовке токена")
-            
+            alg = unverified_header.get("alg")
+            if alg not in self._ALLOWED_ALGORITHMS:
+                raise JWTError(
+                    f"Алгоритм '{alg}' не разрешён. Допустимые: {list(self._ALLOWED_ALGORITHMS)}"
+                )
             public_keys = self.key_manager.get_public_keys()
             if kid not in public_keys:
                 raise JWTError(f"Неизвестный kid: {kid}. Доступные: {list(public_keys.keys())}")
-            
-            return jwt.decode(
+            return pyjwt.decode(
                 token,
                 public_keys[kid],
-                algorithms=[self.algorithm],
-                options={"verify_exp": True, "verify_nbf": True, "verify_iat": True}
+                algorithms=[alg],
+                options={"verify_exp": True, "verify_signature": True}
             )
-        except ExpiredSignatureError:
+        except pyjwt.ExpiredSignatureError:
             raise JWTError("Токен истёк")
+        except pyjwt.PyJWTError as e:
+            raise JWTError(str(e))
         except JWTError:
             raise
         except Exception as e:

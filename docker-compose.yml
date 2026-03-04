@@ -5,6 +5,8 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    volumes:
+      - jwt_keys_data:/app/keys
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,6 +39,7 @@ services:
 
 volumes:
   postgres_data:
+  jwt_keys_data:
 
 networks:
   app_network:
