@@ -6,21 +6,15 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class TokenResponse(BaseModel):
+# Новая схема ответа без refresh_token
+class AccessTokenResponse(BaseModel):
     access_token: str
-    refresh_token: str
     expires_in: int
     token_type: str = "bearer"
 
 
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
-class LogoutRequest(BaseModel):
-    refresh_token: str
-
-
+# Старая TokenResponse больше не нужна, но если используется где-то ещё – можно оставить, но лучше удалить.
+# Удаляем RefreshRequest и LogoutRequest, так как они больше не используются.
 class VerifyResponse(BaseModel):
     user_id: str
     role: str

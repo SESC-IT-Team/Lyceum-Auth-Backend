@@ -21,5 +21,10 @@ class Settings(BaseSettings):
     admin_login: str = "admin"
     admin_password: str = "admin"
 
+    # Настройки для cookie
+    cookie_secure: bool = False  # В production должно быть True (HTTPS)
+    cookie_samesite: str = "lax"  # "strict", "lax" или "none"
+    cookie_domain: str | None = None  # Оставить None для текущего домена
+
 
 settings = Settings()
