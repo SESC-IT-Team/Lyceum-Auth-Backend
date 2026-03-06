@@ -15,10 +15,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Auth API", lifespan=lifespan)
 
-# Настройка CORS
+# Настройка CORS – разрешаем фронтенду отправлять куки
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # замените на адрес вашего фронтенда
+    allow_origins=["http://localhost:3000"],  # замените на реальный адрес фронтенда
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

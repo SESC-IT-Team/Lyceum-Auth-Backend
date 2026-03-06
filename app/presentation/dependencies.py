@@ -1,7 +1,6 @@
 from uuid import UUID
-
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, status, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User
@@ -14,32 +13,40 @@ from app.infrastructure.repositories.user_repository import UserRepository
 from app.infrastructure.repositories.refresh_token_repository import RefreshTokenRepository
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-security_bearer = HTTPBearer(auto_error=False)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
+security_bearer = HTTPBearer(auto_error=False)
 
 limiter = Limiter(key_func=get_remote_address)
+
 def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
     return AuthService(
         user_repository=UserRepository(db),
         refresh_token_repository=RefreshTokenRepository(db),
     )
 
-
 def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
     return UserService(user_repository=UserRepository(db))
 
+async def get_token_from_header_or_cookie(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Depends(security_bearer)
+) -> str | None:
+    """Извлекает access token из заголовка Authorization или из cookie."""
+    if credentials and credentials.credentials:
+        return credentials.credentials
+    # fallback to cookie
+    return request.cookies.get("access_token")
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(security_bearer),
+    token: str | None = Depends(get_token_from_header_or_cookie),
     auth_service: AuthService = Depends(get_auth_service),
 ) -> User:
-    if not credentials or not credentials.credentials:
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated",
         )
-    payload = auth_service.verify_access_token(credentials.credentials)
+    payload = auth_service.verify_access_token(token)
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -53,7 +60,6 @@ async def get_current_user(
         )
     return user
 
-
 def require_permission(permission: Permission):
     async def checker(current_user: User = Depends(get_current_user)) -> User:
         from app.domain.enums.permission import get_permissions_for_role
@@ -65,7 +71,6 @@ def require_permission(permission: Permission):
             )
         return current_user
     return checker
-
 
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != Role.admin:

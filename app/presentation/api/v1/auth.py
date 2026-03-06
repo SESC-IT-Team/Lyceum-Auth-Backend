@@ -6,15 +6,27 @@ from app.application.services.auth_service import AuthService
 from app.presentation.dependencies import get_auth_service, get_current_user, limiter
 from app.presentation.schemas.auth import (
     LoginRequest,
-    AccessTokenResponse,   # новая схема (без refresh_token)
+    TokenResponse,          # возвращаем полный ответ с refresh_token
     VerifyResponse,
 )
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# Вспомогательная функция для установки refresh token cookie
-def set_refresh_token_cookie(response: Response, refresh_token: str):
+def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
+    """Устанавливает access и refresh токены в http-only cookie."""
+    # Access token cookie
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+        domain=settings.cookie_domain,
+        path="/",  # можно ограничить, но обычно корень
+        max_age=settings.jwt_access_expire_minutes * 60,  # секунды
+    )
+    # Refresh token cookie
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
@@ -22,19 +34,17 @@ def set_refresh_token_cookie(response: Response, refresh_token: str):
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
         domain=settings.cookie_domain,
-        path="/api/v1/auth/refresh",  # можно ограничить путь, но обычно "/"
-        max_age=settings.jwt_refresh_expire_days * 24 * 60 * 60,  # в секундах
+        path="/api/v1/auth/refresh",  # лучше ограничить путь для refresh
+        max_age=settings.jwt_refresh_expire_days * 24 * 60 * 60,
     )
 
-def clear_refresh_token_cookie(response: Response):
-    response.delete_cookie(
-        key="refresh_token",
-        path="/api/v1/auth/refresh",
-        domain=settings.cookie_domain,
-    )
+def clear_auth_cookies(response: Response):
+    """Очищает cookie с токенами."""
+    response.delete_cookie("access_token", path="/", domain=settings.cookie_domain)
+    response.delete_cookie("refresh_token", path="/api/v1/auth/refresh", domain=settings.cookie_domain)
 
 
-@router.post("/login", response_model=AccessTokenResponse)
+@router.post("/login", response_model=TokenResponse)
 @limiter.limit("5/minute")
 async def login(
     request: Request,
@@ -48,14 +58,10 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid login or password",
         )
-    # Устанавливаем refresh token в cookie
-    set_refresh_token_cookie(response, result["refresh_token"])
-    # Возвращаем только access токен (refresh_token убран)
-    return AccessTokenResponse(
-        access_token=result["access_token"],
-        expires_in=result["expires_in"],
-        token_type=result["token_type"],
-    )
+    # Устанавливаем cookie с токенами
+    set_auth_cookies(response, result["access_token"], result["refresh_token"])
+    # Возвращаем полный ответ (включая refresh_token для удобства тестирования)
+    return TokenResponse(**result)
 
 
 @router.post("/logout")
@@ -72,11 +78,11 @@ async def logout(
             detail="Refresh token not found in cookies",
         )
     revoked = await auth_service.logout(refresh_token)
-    clear_refresh_token_cookie(response)
+    clear_auth_cookies(response)
     return {"ok": True, "revoked": revoked}
 
 
-@router.post("/refresh", response_model=AccessTokenResponse)
+@router.post("/refresh", response_model=TokenResponse)
 async def refresh(
     request: Request,
     response: Response,
@@ -94,13 +100,10 @@ async def refresh(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired refresh token",
         )
-    # Обновляем cookie с новым refresh токеном
-    set_refresh_token_cookie(response, result["refresh_token"])
-    return AccessTokenResponse(
-        access_token=result["access_token"],
-        expires_in=result["expires_in"],
-        token_type=result["token_type"],
-    )
+    # Обновляем cookie
+    set_auth_cookies(response, result["access_token"], result["refresh_token"])
+    # Возвращаем полный ответ
+    return TokenResponse(**result)
 
 
 @router.post("/verify", response_model=VerifyResponse)
