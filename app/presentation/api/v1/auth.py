@@ -34,8 +34,9 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
         domain=settings.cookie_domain,
-        path="/api/v1/auth/refresh",  # лучше ограничить путь для refresh
+        path="/api/v1/auth",
         max_age=settings.jwt_refresh_expire_days * 24 * 60 * 60,
+
     )
 
 def clear_auth_cookies(response: Response):
