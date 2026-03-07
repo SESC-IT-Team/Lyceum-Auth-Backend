@@ -13,14 +13,6 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
-class LogoutRequest(BaseModel):
-    refresh_token: str
-
-
 class VerifyResponse(BaseModel):
     user_id: str
     role: str

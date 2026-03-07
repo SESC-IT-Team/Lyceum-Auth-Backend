@@ -30,5 +30,10 @@ class Settings(BaseSettings):
     jwt_env_prefix: str = "JWT_KEY"  # Префикс переменных окружения
     env_file_path: str = ".env"
 
+    # Cookie settings
+    cookie_secure: bool = False
+    cookie_samesite: str = "lax"
+    cookie_domain: str | None = None
+
 
 settings = Settings()
