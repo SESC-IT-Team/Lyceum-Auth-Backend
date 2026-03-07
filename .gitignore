@@ -3,3 +3,17 @@
 
 rules/
 .idea/
+
+.env
+.env.local
+.env.prod
+*.pem
+*_private.pem
+keys/
+!keys/.gitkeep  # Оставляем пустую папку в репо
+
+*.log
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/

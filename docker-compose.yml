@@ -5,6 +5,8 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    volumes:
+      - jwt_keys_data:/app/keys
     depends_on:
       postgres:
         condition: service_healthy
@@ -14,6 +16,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    networks:
+      - app_network
 
   postgres:
     image: postgres:15-alpine
@@ -30,6 +34,13 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - app_network
 
 volumes:
   postgres_data:
+  jwt_keys_data:
+
+networks:
+  app_network:
+    driver: bridge

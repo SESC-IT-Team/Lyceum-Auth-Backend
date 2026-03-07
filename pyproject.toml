@@ -16,6 +16,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "python-jose[cryptography]>=3.3.0",
+    "PyJWT[crypto]>=2.8.0",
     "passlib[argon2]>=1.7.4",
     "alembic>=1.14.0",
     "python-multipart>=0.0.17",
