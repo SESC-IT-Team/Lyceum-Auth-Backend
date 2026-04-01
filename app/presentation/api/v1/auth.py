@@ -42,7 +42,7 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
 def clear_auth_cookies(response: Response):
     """Очищает cookie с токенами."""
     response.delete_cookie("access_token", path="/", domain=settings.cookie_domain)
-    response.delete_cookie("refresh_token", path="/api/v1/auth/refresh", domain=settings.cookie_domain)
+    response.delete_cookie("refresh_token", path="/api/v1/auth", domain=settings.cookie_domain)
 
 
 @router.post("/login", response_model=TokenResponse)
