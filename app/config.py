@@ -28,7 +28,9 @@ class Settings(BaseSettings):
     jwt_keys_dir: str = "keys"  # Для filesystem backend
     jwt_storage_backend: str = "filesystem"  # "filesystem" | "environment"
     jwt_env_prefix: str = "JWT_KEY"  # Префикс переменных окружения
+    jwt_issuer: str = 'http://localhost:8000' # url сервера авторизации
     env_file_path: str = ".env"
+    allowed_origins:list[str] = ["http://localhost:8000"]
 
     # Cookie settings
     cookie_secure: bool = False

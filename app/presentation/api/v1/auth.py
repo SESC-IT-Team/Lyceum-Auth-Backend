@@ -6,8 +6,8 @@ from app.application.services.auth_service import AuthService
 from app.presentation.dependencies import get_auth_service, get_current_user, limiter
 from app.presentation.schemas.auth import (
     LoginRequest,
-    TokenResponse,          # возвращаем полный ответ с refresh_token
-    VerifyResponse,
+    TokenResponse,  # возвращаем полный ответ с refresh_token
+    VerifyResponse, JwksResponse,
 )
 from app.config import settings
 
@@ -137,3 +137,7 @@ async def me(current_user: User = Depends(get_current_user)):
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,
     )
+
+@router.get('/jwks')
+async def get_jwks(auth_service: AuthService = Depends(get_auth_service)) -> JwksResponse:
+    return JwksResponse(**auth_service.get_jwks())

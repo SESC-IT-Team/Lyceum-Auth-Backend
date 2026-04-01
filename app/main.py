@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.config import settings
 from app.presentation.api.v1 import auth, users
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -19,7 +21,7 @@ app.state.limiter = limiter
 # Настройка CORS – разрешаем фронтенду отправлять куки
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # замените на реальный адрес фронтенда
+    allow_origins=settings.allowed_origins,  # замените на реальный адрес фронтенда
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
