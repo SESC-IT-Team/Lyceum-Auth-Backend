@@ -255,7 +255,7 @@ class KeyRotationManager:
         if not new_kid:
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             new_kid = f"key-{timestamp}"
-        
+
         private_pem, public_pem = self.generate_key_pair(new_kid)
         
         if self.storage_backend == "filesystem":
@@ -358,7 +358,7 @@ class RotationJWT:
                 token,
                 public_keys[kid],
                 algorithms=[alg],
-                options={"verify_exp": True, "verify_signature": True},
+                options={"verify_exp": True, "verify_iss": True, "verify_signature": True},
                 issuer=settings.jwt_issuer
             )
         except pyjwt.ExpiredSignatureError:
