@@ -1,5 +1,6 @@
 import logging
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 
@@ -29,6 +30,20 @@ class Settings(BaseSettings):
     jwt_storage_backend: str = "filesystem"  # "filesystem" | "environment"
     jwt_env_prefix: str = "JWT_KEY"  # Префикс переменных окружения
     env_file_path: str = ".env"
+
+    allowed_origins: list[str] = ["http://localhost:3000"]
+
+    @field_validator("allowed_origins", mode="before")
+    @classmethod
+    def parse_allowed_origins(cls, v):
+        if isinstance(v, str):
+            import json
+            try:
+                return json.loads(v)
+            except Exception:
+                # Fallback: если не валидный JSON, разбиваем по запятым
+                return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
 
     # Cookie settings
     cookie_secure: bool = False
