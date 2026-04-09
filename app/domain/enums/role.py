@@ -6,3 +6,4 @@ class Role(str, Enum):
     teacher = "teacher"
     student = "student"
     staff = "staff"
+    parent = "parent"

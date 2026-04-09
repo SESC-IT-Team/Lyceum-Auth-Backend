@@ -26,6 +26,7 @@ class UserRepository(IUserRepository):
             gender=m.gender if isinstance(m.gender, Gender) else Gender(m.gender),
             class_name=m.class_name,
             graduation_year=m.graduation_year,
+            departments=m.departments,
             created_at=m.created_at,
             updated_at=m.updated_at,
         )

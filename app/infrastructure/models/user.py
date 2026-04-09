@@ -3,8 +3,10 @@ from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, String, Integer, Boolean, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
 from app.domain.enums.role import Role
 from app.infrastructure.models.base import Base
@@ -22,6 +24,7 @@ class UserModel(Base):
     class_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     graduation_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     login: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    departments: Mapped[list[Department]] = mapped_column(PG_ARRAY(String(255)), nullable=True)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
 from app.domain.enums.role import Role
 
@@ -17,6 +18,7 @@ class UserCreate(BaseModel):
     middle_name: str | None = None
     class_name: str | None = None
     graduation_year: int | None = None
+    departments: list[Department] | None = None
 
 
 class UserUpdate(BaseModel):
@@ -29,6 +31,7 @@ class UserUpdate(BaseModel):
     graduation_year: int | None = None
     login: str | None = None
     password: str | None = None
+    departments: list[Department] | None = None
 
 
 class UserResponse(BaseModel):
@@ -37,6 +40,7 @@ class UserResponse(BaseModel):
     first_name: str
     middle_name: str | None
     role: Role
+    departments: list[Department] | None = None
     gender: Gender
     class_name: str | None
     graduation_year: int | None

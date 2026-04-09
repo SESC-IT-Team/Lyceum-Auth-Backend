@@ -2,6 +2,7 @@ from uuid import UUID, uuid4
 import logging
 
 from app.domain.entities.user import User
+from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
 from app.domain.enums.role import Role
 from app.application.interfaces.repositories import IUserRepository
@@ -33,6 +34,7 @@ class UserService:
         password_hash: str,
         role: Role,
         gender: Gender,
+        departments: list[Department] | None = None,
         middle_name: str | None = None,
         class_name: str | None = None,
         graduation_year: int | None = None,
@@ -46,6 +48,7 @@ class UserService:
             password_hash=password_hash,
             role=role,
             gender=gender,
+            departments=departments,
             class_name=class_name,
             graduation_year=graduation_year,
         )
@@ -66,6 +69,7 @@ class UserService:
         graduation_year: int | None = None,
         login: str | None = None,
         password_hash: str | None = None,
+        departments: list[Department] | None = None,
     ) -> User | None:
         existing = await self._repo.get_by_id(user_id)
         if existing is None:
@@ -85,6 +89,7 @@ class UserService:
             graduation_year=graduation_year if graduation_year is not None else existing.graduation_year,
             created_at=existing.created_at,
             updated_at=existing.updated_at,
+            departments=departments,
         )
         updated = await self._repo.update(user)
         logger.info(f"Пользователь обновлён: {user_id}")

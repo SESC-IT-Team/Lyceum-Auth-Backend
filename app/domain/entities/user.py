@@ -1,6 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
+from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
 from app.domain.enums.role import Role
 
@@ -15,6 +16,7 @@ class User:
         password_hash: str,
         role: Role,
         gender: Gender,
+        departments: list[Department] | None = None,
         middle_name: str | None = None,
         class_name: str | None = None,
         graduation_year: int | None = None,
@@ -29,6 +31,7 @@ class User:
         self.password_hash = password_hash
         self.role = role
         self.gender = gender
+        self.departments = departments or []
         self.class_name = class_name
         self.graduation_year = graduation_year
         self.created_at = created_at
