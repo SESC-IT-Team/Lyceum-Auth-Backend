@@ -22,7 +22,7 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         httponly=True,
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
-        domain=settings.cookie_domain,
+        domain='auth' + settings.cookie_domain,
         path="/",  # можно ограничить, но обычно корень
         max_age=settings.jwt_access_expire_minutes * 60,  # секунды
     )
@@ -41,7 +41,7 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
 
 def clear_auth_cookies(response: Response):
     """Очищает cookie с токенами."""
-    response.delete_cookie("access_token", path="/", domain=settings.cookie_domain)
+    response.delete_cookie("access_token", path="/", domain='auth' + settings.cookie_domain)
     response.delete_cookie("refresh_token", path="/api/v1/auth", domain=settings.cookie_domain)
 
 
@@ -61,7 +61,6 @@ async def login(
         )
     # Устанавливаем cookie с токенами
     set_auth_cookies(response, result["access_token"], result["refresh_token"])
-    # Возвращаем полный ответ (включая refresh_token для удобства тестирования)
     return TokenResponse(**result)
 
 
