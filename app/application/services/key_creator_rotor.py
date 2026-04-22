@@ -327,7 +327,6 @@ class RotationJWT:
             self.algorithm = alg
         now = datetime.now()
         payload.update({
-            "iss": settings.jwt_issuer,
             "iat": int(now.timestamp()),
             "exp": int((now + timedelta(seconds=expires_in)).timestamp()),
             "nbf": int(now.timestamp())
@@ -358,8 +357,7 @@ class RotationJWT:
                 token,
                 public_keys[kid],
                 algorithms=[alg],
-                options={"verify_exp": True, "verify_iss": True, "verify_signature": True},
-                issuer=settings.jwt_issuer
+                options={"verify_exp": True,"verify_signature": True}
             )
         except pyjwt.ExpiredSignatureError:
             raise JWTError("Токен истёк")
