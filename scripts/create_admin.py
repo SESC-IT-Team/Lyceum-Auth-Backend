@@ -1,6 +1,7 @@
 import asyncio
 
 from app.config import settings
+from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
 from app.domain.enums.role import Role
 from app.infrastructure.database import async_session_factory
@@ -30,6 +31,7 @@ async def create_admin() -> None:
             password_hash=password_hash,
             role=Role.admin,
             gender=Gender.male,
+            departments=[Department.it_department, Department.economic_department],
         )
         await session.commit()
         print(f"Admin user created (login={settings.admin_login}, password=***)")
