@@ -8,11 +8,14 @@ from passlib.context import CryptContext
 
 from app.config import settings
 from app.domain.entities.user import User
+from app.domain.enums import department
+from app.domain.enums.department import Department
 from app.domain.enums.permission import get_permissions_for_role
 from app.application.interfaces.repositories import IUserRepository, IRefreshTokenRepository
 
 # Импорт классов ротации ключей
 from app.application.services.key_creator_rotor import KeyRotationManager, RotationJWT
+from app.domain.enums.position import Position
 
 logger = logging.getLogger(__name__)
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -47,12 +50,14 @@ class AuthService:
     def _verify_password(self, plain: str, hashed: str) -> bool:
         return pwd_context.verify(plain, hashed)
 
-    def _create_access_token(self, user_id: UUID, role: str, permissions: list[str]) -> str:
+    def _create_access_token(self, user_id: UUID, role: str, permissions: list[str], departments: list[Department] | None, position: str | None) -> str:
         """Создание access-токена с использованием ротации ключей"""
         payload = {
             "sub": str(user_id),
             "role": role,
             "permissions": permissions,
+            "departments": departments,
+            "position": position,
             "type": "access",
             # iat и exp добавляются автоматически в RotationJWT
         }
@@ -72,7 +77,8 @@ class AuthService:
             return None
         
         permissions = [p.value for p in get_permissions_for_role(user.role)]
-        access_token = self._create_access_token(user.id, user.role.value, permissions)
+        departments = [d.value for d in user.departments]
+        access_token = self._create_access_token(user.id, user.role.value, permissions, departments, user.position.value if user.position else None)
         refresh_token = self._create_refresh_token_string()
         expires_at = datetime.now(timezone.utc) + timedelta(days=settings.jwt_refresh_expire_days)
         

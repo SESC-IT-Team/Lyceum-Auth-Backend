@@ -24,7 +24,8 @@ def _user_to_response(u: User) -> UserResponse:
         login=u.login,
         created_at=u.created_at,
         updated_at=u.updated_at,
-        departments=u.departments
+        departments=u.departments,
+        position=u.position,
     )
 
 
@@ -86,6 +87,7 @@ async def create_user(
         class_name=body.class_name,
         graduation_year=body.graduation_year,
         departments=body.departments,
+        position=body.position,
     )
     return _user_to_response(user)
 
@@ -116,6 +118,7 @@ async def update_user(
         login=body.login,
         password_hash=password_hash,
         departments=body.departments,
+        position=body.position,
     )
     if updated is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

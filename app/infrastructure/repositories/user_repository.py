@@ -27,6 +27,7 @@ class UserRepository(IUserRepository):
             class_name=m.class_name,
             graduation_year=m.graduation_year,
             departments=m.departments,
+            position=m.position,
             created_at=m.created_at,
             updated_at=m.updated_at,
         )
@@ -53,6 +54,8 @@ class UserRepository(IUserRepository):
             gender=user.gender,
             class_name=user.class_name,
             graduation_year=user.graduation_year,
+            departments=user.departments,
+            position=user.position,
         )
         self._session.add(m)
         await self._session.flush()
@@ -69,6 +72,8 @@ class UserRepository(IUserRepository):
         m.gender = user.gender
         m.class_name = user.class_name
         m.graduation_year = user.graduation_year
+        m.departments = user.departments
+        m.position = user.position
         m.login = user.login
         m.password_hash = user.password_hash
         await self._session.flush()

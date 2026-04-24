@@ -3,6 +3,7 @@ from uuid import UUID
 
 from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
+from app.domain.enums.position import Position
 from app.domain.enums.role import Role
 
 
@@ -17,6 +18,7 @@ class User:
         role: Role,
         gender: Gender,
         departments: list[Department] | None = None,
+        position: Position | None = None,
         middle_name: str | None = None,
         class_name: str | None = None,
         graduation_year: int | None = None,
@@ -32,6 +34,7 @@ class User:
         self.role = role
         self.gender = gender
         self.departments = departments or []
+        self.position = position
         self.class_name = class_name
         self.graduation_year = graduation_year
         self.created_at = created_at

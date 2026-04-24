@@ -117,6 +117,8 @@ async def verify(
         user_id=str(current_user.id),
         role=current_user.role.value,
         permissions=perms,
+        departments=current_user.departments,
+        position=current_user.position,
     )
 
 
@@ -132,6 +134,8 @@ async def me(current_user: User = Depends(get_current_user)):
         gender=current_user.gender,
         class_name=current_user.class_name,
         graduation_year=current_user.graduation_year,
+        departments=current_user.departments,
+        position=current_user.position,
         login=current_user.login,
         created_at=current_user.created_at,
         updated_at=current_user.updated_at,

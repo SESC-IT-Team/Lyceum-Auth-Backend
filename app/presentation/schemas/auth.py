@@ -1,5 +1,8 @@
 from pydantic import BaseModel
 
+from app.domain.enums.department import Department
+from app.domain.enums.position import Position
+
 
 class LoginRequest(BaseModel):
     login: str
@@ -16,6 +19,8 @@ class VerifyResponse(BaseModel):
     user_id: str
     role: str
     permissions: list[str]
+    departments: list[Department] | None
+    position: Position | None
 
 class Jwk(BaseModel):
     kty: str  # тип ключа (RSA)

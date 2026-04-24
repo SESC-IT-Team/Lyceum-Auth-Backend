@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
+from app.domain.enums.position import Position
 from app.domain.enums.role import Role
 from app.infrastructure.models.base import Base
 
@@ -24,7 +25,8 @@ class UserModel(Base):
     class_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     graduation_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     login: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    departments: Mapped[list[Department]] = mapped_column(PG_ARRAY(String(255)), nullable=True)
+    departments: Mapped[list[Department]] = mapped_column(PG_ARRAY(Enum(Department)), nullable=True)
+    position: Mapped[Position | None] = mapped_column(Enum(Position, name="position_enum"), nullable=True, name="department_position")
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)

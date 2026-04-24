@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID, uuid4
 import logging
 
@@ -5,6 +6,7 @@ from app.domain.entities.user import User
 from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
 from app.domain.enums.role import Role
+from app.domain.enums.position import Position
 from app.application.interfaces.repositories import IUserRepository
 from app.application.services.key_creator_rotor import KeyRotationManager, RotationJWT
 
@@ -35,6 +37,7 @@ class UserService:
         role: Role,
         gender: Gender,
         departments: list[Department] | None = None,
+        position: Position | None = None,
         middle_name: str | None = None,
         class_name: str | None = None,
         graduation_year: int | None = None,
@@ -49,6 +52,7 @@ class UserService:
             role=role,
             gender=gender,
             departments=departments,
+            position=position,
             class_name=class_name,
             graduation_year=graduation_year,
         )
@@ -70,6 +74,7 @@ class UserService:
         login: str | None = None,
         password_hash: str | None = None,
         departments: list[Department] | None = None,
+        position: Position | None = None,
     ) -> User | None:
         existing = await self._repo.get_by_id(user_id)
         if existing is None:
@@ -87,12 +92,12 @@ class UserService:
             gender=gender if gender is not None else existing.gender,
             class_name=class_name if class_name is not None else existing.class_name,
             graduation_year=graduation_year if graduation_year is not None else existing.graduation_year,
-            created_at=existing.created_at,
-            updated_at=existing.updated_at,
-            departments=departments,
+            departments=departments if departments is not None else existing.departments,
+            position=position if position is not None else existing.position,
         )
         updated = await self._repo.update(user)
         logger.info(f"Пользователь обновлён: {user_id}")
+        print(updated.position)
         return updated
 
     async def delete(self, user_id: UUID) -> bool:
