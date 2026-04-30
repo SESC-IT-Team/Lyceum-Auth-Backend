@@ -1,45 +1,33 @@
 from enum import Enum
 
-from app.domain.enums.role import Role
-
 
 class Permission(str, Enum):
-    users_create = "users:create"
-    users_read = "users:read"
-    users_update = "users:update"
-    users_delete = "users:delete"
-    auth_login = "auth:login"
-    auth_logout = "auth:logout"
-    auth_verify = "auth:verify"
+    # auth service
+    auth_users_create = "auth:users:create"
+    auth_users_read = "auth:users:read"
+    auth_users_update = "auth:users:update"
+    auth_users_delete = "auth:users:delete"
+
+    # technical support service
+    technical_support_orders_create = "technical_support:orders:create"
+    technical_support_orders_set_department = "technical_support:orders:set_department"
+    technical_support_orders_get = "technical_support:orders:get"
+    technical_support_orders_set_status = "technical_support:orders:set_status"
+    technical_support_orders_set_worker = "technical_support:orders:set_worker"
 
 
-ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
-    Role.admin: {
-        Permission.users_create,
-        Permission.users_read,
-        Permission.users_update,
-        Permission.users_delete,
-        Permission.auth_login,
-        Permission.auth_logout,
-        Permission.auth_verify,
-    },
-    Role.teacher: {
-        Permission.auth_login,
-        Permission.auth_logout,
-        Permission.auth_verify,
-    },
-    Role.student: {
-        Permission.auth_login,
-        Permission.auth_logout,
-        Permission.auth_verify,
-    },
-    Role.staff: {
-        Permission.auth_login,
-        Permission.auth_logout,
-        Permission.auth_verify,
-    },
-}
+class Permissions:
+    class Auth:
+        class Users:
+            create = Permission.auth_users_create
+            read = Permission.auth_users_read
+            update = Permission.auth_users_update
+            delete = Permission.auth_users_delete
 
-
-def get_permissions_for_role(role: Role) -> set[Permission]:
-    return ROLE_PERMISSIONS.get(role, set())
+    class TechnicalSupport:
+        class Orders:
+            create = Permission.technical_support_orders_create
+            set_department = Permission.technical_support_orders_set_department
+            get = Permission.technical_support_orders_get
+            set_status = Permission.technical_support_orders_set_status
+            set_worker = Permission.technical_support_orders_set_worker
