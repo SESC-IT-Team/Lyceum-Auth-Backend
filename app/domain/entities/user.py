@@ -1,41 +1,26 @@
+from typing import Annotated, Optional
+
+from pydantic import BaseModel, Field
+
 from datetime import datetime
 from uuid import UUID
 
-from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
-from app.domain.enums.position import Position
-from app.domain.enums.role import Role
+from app.domain.enums.permission import PermissionType
+from app.domain.enums.role import RoleType
 
 
-class User:
-    def __init__(
-        self,
-        id: UUID,
-        last_name: str,
-        first_name: str,
-        login: str,
-        password_hash: str,
-        role: Role,
-        gender: Gender,
-        departments: list[Department] | None = None,
-        position: Position | None = None,
-        middle_name: str | None = None,
-        class_name: str | None = None,
-        graduation_year: int | None = None,
-        created_at: datetime | None = None,
-        updated_at: datetime | None = None,
-    ):
-        self.id = id
-        self.last_name = last_name
-        self.first_name = first_name
-        self.middle_name = middle_name
-        self.login = login
-        self.password_hash = password_hash
-        self.role = role
-        self.gender = gender
-        self.departments = departments or []
-        self.position = position
-        self.class_name = class_name
-        self.graduation_year = graduation_year
-        self.created_at = created_at
-        self.updated_at = updated_at
+class User(BaseModel):
+    id: UUID
+    last_name: str
+    first_name: str
+    login: str
+    password_hash: str
+    roles: list[RoleType]
+    gender: Gender
+    permissions: Annotated[Optional[list[PermissionType]], Field(default_factory=list)]
+    middle_name: str | None = None
+    class_name: str | None = None
+    graduation_year: int | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
