@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User
 from app.domain.enums.gender import Gender
-from app.domain.enums.role import Role
+from app.domain.enums.role import RoleType
 from app.application.interfaces.repositories import IUserRepository
 from app.infrastructure.models.user import UserModel
 
@@ -14,71 +14,64 @@ class UserRepository(IUserRepository):
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    def _to_entity(self, m: UserModel) -> User:
+    @staticmethod
+    def model_to_entity(m: UserModel) -> User:
         return User(
             id=m.id,
             last_name=m.last_name,
             first_name=m.first_name,
-            middle_name=m.middle_name,
             login=m.login,
             password_hash=m.password_hash,
-            role=m.role if isinstance(m.role, Role) else Role(m.role),
-            gender=m.gender if isinstance(m.gender, Gender) else Gender(m.gender),
+            roles=m.roles,
+            gender=m.gender,
+            permissions=m.permissions,
+            middle_name=m.middle_name,
             class_name=m.class_name,
             graduation_year=m.graduation_year,
-            departments=m.departments,
-            position=m.position,
             created_at=m.created_at,
-            updated_at=m.updated_at,
+            updated_at=m.updated_at
         )
+
+    @staticmethod
+    def entity_to_model(e: User) -> UserModel:
+        return UserModel(**e.model_dump())
+
+    @staticmethod
+    def apply_entity_to_model(e: User, m: UserModel) -> None:
+        m.last_name = e.last_name
+        m.first_name = e.first_name
+        m.login = e.login
+        m.password_hash = e.password_hash
+        m.roles = e.roles
+        m.gender = e.gender
+        m.middle_name = e.middle_name
+        m.class_name = e.class_name
+        m.graduation_year = e.graduation_year
 
     async def get_by_id(self, user_id: UUID) -> User | None:
         result = await self._session.execute(select(UserModel).where(UserModel.id == user_id))
         row = result.scalar_one_or_none()
-        return self._to_entity(row) if row else None
+        return self.model_to_entity(row) if row else None
 
     async def get_by_login(self, login: str) -> User | None:
         result = await self._session.execute(select(UserModel).where(UserModel.login == login))
         row = result.scalar_one_or_none()
-        return self._to_entity(row) if row else None
+        return self.model_to_entity(row) if row else None
 
     async def create(self, user: User) -> User:
-        m = UserModel(
-            id=user.id,
-            last_name=user.last_name,
-            first_name=user.first_name,
-            middle_name=user.middle_name,
-            login=user.login,
-            password_hash=user.password_hash,
-            role=user.role,
-            gender=user.gender,
-            class_name=user.class_name,
-            graduation_year=user.graduation_year,
-            departments=user.departments,
-            position=user.position,
-        )
+        m = self.entity_to_model(user)
         self._session.add(m)
         await self._session.flush()
         await self._session.refresh(m)
-        return self._to_entity(m)
+        return self.model_to_entity(m)
 
     async def update(self, user: User) -> User:
         result = await self._session.execute(select(UserModel).where(UserModel.id == user.id))
         m = result.scalar_one()
-        m.last_name = user.last_name
-        m.first_name = user.first_name
-        m.middle_name = user.middle_name
-        m.role = user.role
-        m.gender = user.gender
-        m.class_name = user.class_name
-        m.graduation_year = user.graduation_year
-        m.departments = user.departments
-        m.position = user.position
-        m.login = user.login
-        m.password_hash = user.password_hash
+        self.apply_entity_to_model(user, m)
         await self._session.flush()
         await self._session.refresh(m)
-        return self._to_entity(m)
+        return self.model_to_entity(m)
 
     async def delete(self, user_id: UUID) -> bool:
         result = await self._session.execute(select(UserModel).where(UserModel.id == user_id))
@@ -93,7 +86,7 @@ class UserRepository(IUserRepository):
         result = await self._session.execute(
             select(UserModel).order_by(UserModel.created_at.desc()).offset(offset).limit(limit)
         )
-        return [self._to_entity(m) for m in result.scalars().all()]
+        return [self.model_to_entity(m) for m in result.scalars().all()]
 
     async def count(self) -> int:
         result = await self._session.execute(select(func.count()).select_from(UserModel))

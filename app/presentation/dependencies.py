@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User
 from app.domain.enums.permission import Permission
-from app.domain.enums.role import Role
+from app.domain.enums.role import RoleType
 from app.application.services.auth_service import AuthService
 from app.application.services.user_service import UserService
 from app.infrastructure.database import get_db
@@ -73,7 +73,7 @@ def require_permission(permission: Permission):
     return checker
 
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role != Role.admin:
+    if current_user.role != RoleType.admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin only",
