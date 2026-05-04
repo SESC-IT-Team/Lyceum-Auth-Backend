@@ -1,7 +1,9 @@
+from uuid import UUID
+
 from pydantic import BaseModel
 
-from app.domain.enums.department import Department
-from app.domain.enums.position import Position
+from app.domain.enums.permission import PermissionType
+from app.domain.enums.role import Role
 
 
 class LoginRequest(BaseModel):
@@ -16,11 +18,9 @@ class TokenResponse(BaseModel):
 
 
 class VerifyResponse(BaseModel):
-    user_id: str
-    role: str
-    permissions: list[str]
-    departments: list[Department] | None
-    position: Position | None
+    user_id: UUID
+    roles: list[Role]
+    permissions: list[PermissionType]
 
 class Jwk(BaseModel):
     kty: str  # тип ключа (RSA)

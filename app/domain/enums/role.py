@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class RoleType(str, Enum):
+class Role(str, Enum):
     admin = "admin"
     teacher = "teacher"
     student = "student"

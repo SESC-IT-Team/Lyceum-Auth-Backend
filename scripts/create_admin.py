@@ -1,9 +1,9 @@
 import asyncio
 
 from app.config import settings
-from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
-from app.domain.enums.role import RoleType
+from app.domain.enums.permission import ALL_PERMISSIONS
+from app.domain.enums.role import Role
 from app.infrastructure.database import async_session_factory
 from app.infrastructure.repositories.user_repository import UserRepository
 from app.application.services.user_service import UserService
@@ -29,9 +29,9 @@ async def create_admin() -> None:
             first_name="Admin",
             login=settings.admin_login,
             password_hash=password_hash,
-            role=RoleType.admin,
+            roles=[Role.admin,],
             gender=Gender.male,
-            departments=[Department.it_department, Department.economic_department],
+            permissions=[*ALL_PERMISSIONS]
         )
         await session.commit()
         print(f"Admin user created (login={settings.admin_login}, password=***)")

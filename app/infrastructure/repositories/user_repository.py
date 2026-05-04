@@ -4,8 +4,6 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User
-from app.domain.enums.gender import Gender
-from app.domain.enums.role import RoleType
 from app.application.interfaces.repositories import IUserRepository
 from app.infrastructure.models.user import UserModel
 
@@ -47,15 +45,16 @@ class UserRepository(IUserRepository):
         m.middle_name = e.middle_name
         m.class_name = e.class_name
         m.graduation_year = e.graduation_year
+        m.permissions = e.permissions
 
     async def get_by_id(self, user_id: UUID) -> User | None:
         result = await self._session.execute(select(UserModel).where(UserModel.id == user_id))
-        row = result.scalar_one_or_none()
+        row: UserModel | None = result.scalar_one_or_none()
         return self.model_to_entity(row) if row else None
 
     async def get_by_login(self, login: str) -> User | None:
         result = await self._session.execute(select(UserModel).where(UserModel.login == login))
-        row = result.scalar_one_or_none()
+        row: UserModel | None = result.scalar_one_or_none()
         return self.model_to_entity(row) if row else None
 
     async def create(self, user: User) -> User:

@@ -40,7 +40,7 @@ class Permissions:
             revoke = PermissionType.auth_keys_revoke
 
         class MasterPermissions:
-            write = PermissionType.auth_super_permission_grant
+            write = PermissionType.auth_master_permissions_write
 
         class SuperPermission:
             grant = PermissionType.auth_super_permission_grant
@@ -53,3 +53,21 @@ class Permissions:
             get = PermissionType.technical_support_orders_get
             set_status = PermissionType.technical_support_orders_set_status
             set_worker = PermissionType.technical_support_orders_set_worker
+
+ALL_PERMISSIONS: set[PermissionType] = {p for p in PermissionType}
+
+ABSOLUTE_PERMISSIONS: set[PermissionType] = {
+    Permissions.Auth.SuperPermission.grant,
+    Permissions.Auth.SuperPermission.revoke,
+}
+
+SUPER_PERMISSIONS: set[PermissionType] = {
+    Permissions.Auth.MasterPermissions.write,
+}
+
+MASTER_PERMISSIONS: set[PermissionType] = {
+    Permissions.Auth.BasicPermissions.write,
+    Permissions.Auth.Keys.revoke
+}
+
+BASIC_PERMISSIONS: set[PermissionType] = ALL_PERMISSIONS - MASTER_PERMISSIONS - SUPER_PERMISSIONS - ABSOLUTE_PERMISSIONS

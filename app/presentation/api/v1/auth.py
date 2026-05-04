@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
-from fastapi.security import HTTPBearer
 
 from app.domain.entities.user import User
 from app.application.services.auth_service import AuthService
 from app.presentation.dependencies import get_auth_service, get_current_user, limiter
 from app.presentation.schemas.auth import (
     LoginRequest,
-    TokenResponse,  # возвращаем полный ответ с refresh_token
+    TokenResponse,
     VerifyResponse, JwksResponse,
 )
 from app.config import settings
@@ -69,7 +68,6 @@ async def logout(
     request: Request,
     response: Response,
     auth_service: AuthService = Depends(get_auth_service),
-    current_user: User = Depends(get_current_user),
 ):
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
@@ -108,38 +106,19 @@ async def refresh(
 
 @router.post("/verify", response_model=VerifyResponse)
 async def verify(
-    auth_service: AuthService = Depends(get_auth_service),
     current_user: User = Depends(get_current_user),
 ):
-    from app.domain.enums.permission import get_permissions_for_role
-    perms = [p.value for p in get_permissions_for_role(current_user.role)]
     return VerifyResponse(
-        user_id=str(current_user.id),
-        role=current_user.role.value,
-        permissions=perms,
-        departments=current_user.departments,
-        position=current_user.position,
+        user_id=current_user.id,
+        roles=current_user.roles,
+        permissions=current_user.permissions,
     )
 
 
 @router.get("/me")
 async def me(current_user: User = Depends(get_current_user)):
     from app.presentation.schemas.user import UserResponse
-    return UserResponse(
-        id=current_user.id,
-        last_name=current_user.last_name,
-        first_name=current_user.first_name,
-        middle_name=current_user.middle_name,
-        role=current_user.role,
-        gender=current_user.gender,
-        class_name=current_user.class_name,
-        graduation_year=current_user.graduation_year,
-        departments=current_user.departments,
-        position=current_user.position,
-        login=current_user.login,
-        created_at=current_user.created_at,
-        updated_at=current_user.updated_at,
-    )
+    return UserResponse.from_entity(current_user)
 
 @router.get('/jwks')
 async def get_jwks(auth_service: AuthService = Depends(get_auth_service)) -> JwksResponse:

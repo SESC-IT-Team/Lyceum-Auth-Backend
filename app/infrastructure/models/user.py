@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums.gender import Gender
 from app.domain.enums.permission import PermissionType
-from app.domain.enums.role import RoleType
+from app.domain.enums.role import Role
 from app.infrastructure.models.base import Base
 
 
@@ -19,12 +19,12 @@ class UserModel(Base):
     last_name: Mapped[str] = mapped_column(String(255), nullable=False)
     first_name: Mapped[str] = mapped_column(String(255), nullable=False)
     middle_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    roles: Mapped[list[RoleType]] = mapped_column(PG_ARRAY(Enum(RoleType)), nullable=False)
+    roles: Mapped[list[Role]] = mapped_column(PG_ARRAY(Enum(Role)), nullable=False)
     gender: Mapped[Gender] = mapped_column(Enum(Gender), nullable=False)
     class_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     graduation_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     login: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    permissions: Mapped[list[PermissionType] | None] = mapped_column(PG_ARRAY(Enum(PermissionType)), nullable=True)
+    permissions: Mapped[list[PermissionType]] = mapped_column(PG_ARRAY(Enum(PermissionType)), nullable=True)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)

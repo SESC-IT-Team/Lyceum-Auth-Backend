@@ -1,12 +1,13 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
-from app.domain.enums.department import Department
+from app.application.services.user_permissions_service import UserPermissionsService
+from app.domain.entities.user import User
 from app.domain.enums.gender import Gender
-from app.domain.enums.position import Position
-from app.domain.enums.role import RoleType
+from app.domain.enums.permission import PermissionType
+from app.domain.enums.role import Role
 
 
 class UserCreate(BaseModel):
@@ -14,27 +15,23 @@ class UserCreate(BaseModel):
     first_name: str
     login: str
     password: str
-    role: RoleType
+    roles: list[Role]
     gender: Gender
     middle_name: str | None = None
     class_name: str | None = None
     graduation_year: int | None = None
-    departments: list[Department] | None = None
-    position: Position | None = None
 
 
 class UserUpdate(BaseModel):
     last_name: str | None = None
     first_name: str | None = None
     middle_name: str | None = None
-    role: RoleType | None = None
+    roles: list[Role] | None = None
     gender: Gender | None = None
     class_name: str | None = None
     graduation_year: int | None = None
     login: str | None = None
-    password: str | None = None
-    departments: list[Department] | None = None
-    position: Position | None = None
+    permissions: list[PermissionType] | None = None
 
 
 class UserResponse(BaseModel):
@@ -42,9 +39,8 @@ class UserResponse(BaseModel):
     last_name: str
     first_name: str
     middle_name: str | None
-    role: RoleType
-    departments: list[Department] | None = None
-    position: Position | None = None
+    roles: list[Role]
+    permissions: list[PermissionType]
     gender: Gender
     class_name: str | None
     graduation_year: int | None
@@ -54,6 +50,10 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = False
+
+    @classmethod
+    def from_entity(cls, user: User):
+        return cls(**user.model_dump())
 
 
 class UserListResponse(BaseModel):

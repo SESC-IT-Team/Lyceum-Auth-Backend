@@ -4,8 +4,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User
-from app.domain.enums.permission import Permission
-from app.domain.enums.role import RoleType
+from app.domain.enums.permission import PermissionType
+from app.domain.enums.role import Role
 from app.application.services.auth_service import AuthService
 from app.application.services.user_service import UserService
 from app.infrastructure.database import get_db
@@ -60,22 +60,12 @@ async def get_current_user(
         )
     return user
 
-def require_permission(permission: Permission):
+def require_permissions(required_permissions: list[PermissionType]):
     async def checker(current_user: User = Depends(get_current_user)) -> User:
-        from app.domain.enums.permission import get_permissions_for_role
-        perms = get_permissions_for_role(current_user.role)
-        if permission not in perms:
+        if any(p not in current_user.permissions for p in required_permissions):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions",
             )
         return current_user
     return checker
-
-async def require_admin(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.role != RoleType.admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin only",
-        )
-    return current_user

@@ -2,11 +2,11 @@ from datetime import datetime
 from uuid import UUID, uuid4
 import logging
 
+from app.application.services.user_permissions_service import UserPermissionsService
 from app.domain.entities.user import User
-from app.domain.enums.department import Department
 from app.domain.enums.gender import Gender
-from app.domain.enums.role import RoleType
-from app.domain.enums.position import Position
+from app.domain.enums.permission import PermissionType
+from app.domain.enums.role import Role
 from app.application.interfaces.repositories import IUserRepository
 from app.application.services.key_creator_rotor import KeyRotationManager, RotationJWT
 
@@ -34,12 +34,15 @@ class UserService:
         first_name: str,
         login: str,
         password_hash: str,
-        roles: list[RoleType],
+        roles: list[Role],
         gender: Gender,
         middle_name: str | None = None,
         class_name: str | None = None,
         graduation_year: int | None = None,
+        permissions: list[PermissionType] | None = None,
     ) -> User:
+        if not permissions:
+            permissions = []
         user = User(
             id=uuid4(),
             last_name=last_name,
@@ -51,6 +54,7 @@ class UserService:
             gender=gender,
             class_name=class_name,
             graduation_year=graduation_year,
+            permissions=permissions
         )
         created = await self._repo.create(user)
         logger.info(f"Пользователь создан: {created.id}, login={login}")
@@ -63,33 +67,40 @@ class UserService:
         last_name: str | None = None,
         first_name: str | None = None,
         middle_name: str | None = None,
-        role: RoleType | None = None,
+        roles: list[Role] | None = None,
         gender: Gender | None = None,
         class_name: str | None = None,
         graduation_year: int | None = None,
         login: str | None = None,
-        password_hash: str | None = None
+        password_hash: str | None = None,
+        permissions: list[PermissionType] | None = None
     ) -> User | None:
-        existing = await self._repo.get_by_id(user_id)
-        if existing is None:
+        user = await self._repo.get_by_id(user_id)
+        if user is None:
             logger.warning(f"Пользователь {user_id} не найден для обновления")
             return None
-            
-        user = User(
-            id=existing.id,
-            last_name=last_name if last_name is not None else existing.last_name,
-            first_name=first_name if first_name is not None else existing.first_name,
-            middle_name=middle_name if middle_name is not None else existing.middle_name,
-            login=login if login is not None else existing.login,
-            gender=gender if gender is not None else existing.gender,
-            class_name=class_name if class_name is not None else existing.class_name,
-            graduation_year=graduation_year if graduation_year is not None else existing.graduation_year,
-            departments=departments if departments is not None else existing.departments,
-            position=position if position is not None else existing.position,
-        )
+        if last_name:
+            user.last_name = last_name
+        if first_name:
+            user.first_name = first_name
+        if middle_name:
+            user.middle_name = middle_name
+        if roles:
+            user.roles = roles
+        if gender:
+            user.gender = gender
+        if class_name:
+            user.class_name = class_name
+        if graduation_year:
+            user.graduation_year = graduation_year
+        if login:
+            user.login = login
+        if password_hash:
+            user.password_hash = password_hash
+        if permissions:
+            user.permissions = permissions
         updated = await self._repo.update(user)
         logger.info(f"Пользователь обновлён: {user_id}")
-        print(updated.position)
         return updated
 
     async def delete(self, user_id: UUID) -> bool:
