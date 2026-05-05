@@ -30,7 +30,6 @@ class UserUpdate(BaseModel):
     gender: Gender | None = None
     class_name: str | None = None
     graduation_year: int | None = None
-    login: str | None = None
     permissions: list[PermissionType] | None = None
 
 

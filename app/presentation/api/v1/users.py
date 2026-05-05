@@ -99,7 +99,6 @@ async def update_user(
         gender=body.gender,
         class_name=body.class_name,
         graduation_year=body.graduation_year,
-        login=body.login,
         permissions=body.permissions,
     )
     if updated is None:
