@@ -20,9 +20,15 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-public
-      - traefik.http.routers.auth-api.rule=Host(`auth.sesc-it-team.ru`)
-      - traefik.http.routers.auth-api.entrypoints=websecure
-      - traefik.http.routers.auth-api.tls.certresolver=letsencrypt
+      - traefik.http.routers.auth-api.rule=Host(`sesc-it-team.ru`) && PathPrefix(`/auth-back`)
+      - traefik.http.routers.auth-api.entrypoints=web
+      - traefik.http.routers.auth-api.middlewares=auth-api-strip
+      - traefik.http.routers.auth-api-secure.rule=Host(`sesc-it-team.ru`) && PathPrefix(`/auth-back`)
+      - traefik.http.routers.auth-api-secure.entrypoints=websecure
+      - traefik.http.routers.auth-api-secure.tls=true
+      - traefik.http.routers.auth-api-secure.tls.certresolver=letsencrypt
+      - traefik.http.routers.auth-api-secure.middlewares=auth-api-strip
+      - traefik.http.middlewares.auth-api-strip.stripprefix.prefixes=/auth-back
       - traefik.http.services.auth-api.loadbalancer.server.port=8000
 
   postgres:
