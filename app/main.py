@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.presentation.api.v1 import auth, users
+from app.presentation.api.v1 import auth, users, permissions_presets
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.presentation.dependencies import limiter
@@ -29,6 +29,7 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
+app.include_router(permissions_presets.router, prefix="/api/v1")
 
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

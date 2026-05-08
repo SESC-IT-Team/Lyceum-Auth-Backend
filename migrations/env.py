@@ -10,6 +10,7 @@ from app.config import settings
 from app.infrastructure.models.base import Base
 from app.infrastructure.models.user import UserModel
 from app.infrastructure.models.refresh_token import RefreshTokenModel
+from app.infrastructure.models.permissions_preset import PermissionsPresetModel
 
 assert len(Base.metadata.tables) > 0, "No tables in Base.metadata - check model imports"
 
