@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # Cookie settings
     cookie_secure: bool = False
     cookie_samesite: str = "lax"
-    cookie_domain: str | None = None
+    cookie_domain: str | None = '.localhost'
 
 
 settings = Settings()
