@@ -31,6 +31,7 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(users.router, prefix="/api/v1")
 app.include_router(permissions_presets.router, prefix="/api/v1")
 
+# pyrefly: ignore [bad-argument-type]
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.get("/health")
