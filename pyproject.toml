@@ -29,6 +29,7 @@ packages = ["app"]
 
 [dependency-groups]
 dev = [
+    "pyrefly>=0.64.1",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
 ]

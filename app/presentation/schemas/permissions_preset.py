@@ -1,9 +1,12 @@
+from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from app.domain.entities.permissions_preset import PermissionsPreset
 from app.domain.enums.permission import PermissionType
+from app.domain.enums.permissions_preset_sortable_field import PermissionsPresetSortableField
+from app.domain.enums.sorting_order import SortingOrder
 
 
 class PermissionsPresetCreate(BaseModel):
@@ -28,3 +31,10 @@ class PermissionsPresetListResponse(BaseModel):
     total: int
     offset: int
     limit: int
+
+class PermissionsPresetFilteringParams(BaseModel):
+    name: str | None = None
+
+class PermissionsPresetSortingParams(BaseModel):
+    sort_by: PermissionsPresetSortableField = PermissionsPresetSortableField.created_at
+    order: SortingOrder = SortingOrder.descending

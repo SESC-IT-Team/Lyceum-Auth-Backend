@@ -1,7 +1,10 @@
+from collections.abc import Callable
+from typing import Any, Optional
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, UnaryExpression
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped
 
 from app.domain.entities.permissions_preset import PermissionsPreset
 from app.application.interfaces.repositories import IPermissionsPresetRepository
@@ -41,8 +44,8 @@ class PermissionsPresetRepository(IPermissionsPresetRepository):
         row: PermissionsPresetModel | None = result.scalar_one_or_none()
         return self.model_to_entity(row) if row else None
 
-    async def create(self, user: PermissionsPreset) -> PermissionsPresetModel:
-        m = self.entity_to_model(user)
+    async def create(self, preset: PermissionsPreset) -> PermissionsPreset:
+        m = self.entity_to_model(preset)
         self._session.add(m)
         await self._session.flush()
         await self._session.refresh(m)
@@ -56,8 +59,8 @@ class PermissionsPresetRepository(IPermissionsPresetRepository):
         await self._session.refresh(m)
         return self.model_to_entity(m)
 
-    async def delete(self, user_id: UUID) -> bool:
-        result = await self._session.execute(select(PermissionsPresetModel).where(PermissionsPresetModel.id == user_id))
+    async def delete(self, preset_id: UUID) -> bool:
+        result = await self._session.execute(select(PermissionsPresetModel).where(PermissionsPresetModel.id == preset_id))
         m = result.scalar_one_or_none()
         if m is None:
             return False
@@ -65,12 +68,27 @@ class PermissionsPresetRepository(IPermissionsPresetRepository):
         await self._session.flush()
         return True
 
-    async def list_(self, offset: int, limit: int) -> list[PermissionsPreset]:
+    async def list_(self, name: Optional[str] = None,
+                    sort_by: Optional[str] = None, order: Optional[str] = None,
+                    offset: int = 0, limit: int = 20) -> list[PermissionsPreset]:
+        if sort_by is None:
+            sort_by = 'created_at'
+        if order is None:
+            order = 'desc'
+        query = select(PermissionsPresetModel)
+        if name:
+            query = query.where(PermissionsPresetModel.name.ilike(f'%{name}%'))
+
+        sorting_column: Mapped[Any] = getattr(PermissionsPresetModel, sort_by)
+        sorting_order: Callable[[], UnaryExpression] = getattr(sorting_column, order)
         result = await self._session.execute(
-            select(PermissionsPresetModel).order_by(PermissionsPresetModel.created_at.desc()).offset(offset).limit(limit)
+            query.order_by(sorting_order()).offset(offset).limit(limit)
         )
         return [self.model_to_entity(m) for m in result.scalars().all()]
 
-    async def count(self) -> int:
-        result = await self._session.execute(select(func.count()).select_from(PermissionsPresetModel))
+    async def count(self, name: str | None = None) -> int:
+        query = select(func.count()).select_from(PermissionsPresetModel)
+        if name:
+            query = query.where(PermissionsPresetModel.name.ilike(f'%{name}%'))
+        result = await self._session.execute(query)
         return result.scalar() or 0

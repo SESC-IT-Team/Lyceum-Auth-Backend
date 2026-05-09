@@ -9,7 +9,7 @@ from app.domain.entities.user import User
 from app.domain.enums.permission import Permissions
 from app.presentation.dependencies import get_permissions_preset_service, require_permissions
 from app.presentation.schemas.permissions_preset import PermissionsPresetResponse, PermissionsPresetListResponse, \
-    PermissionsPresetCreate, PermissionsPresetUpdate
+    PermissionsPresetCreate, PermissionsPresetUpdate, PermissionsPresetFilteringParams, PermissionsPresetSortingParams
 
 router = APIRouter(prefix="/permissions_presets", tags=["permissions_presets"])
 
@@ -22,22 +22,22 @@ async def get_preset(preset_id: UUID, preset_service: PermissionsPresetService =
     return PermissionsPresetResponse.from_entity(preset)
 
 @router.get("")
-async def list_presets(offset: int, limit: int,
+async def list_presets(offset: int, limit: int, filtering_params: PermissionsPresetFilteringParams = Depends(), sorting_params: PermissionsPresetSortingParams = Depends(),
                        preset_service: PermissionsPresetService = Depends(get_permissions_preset_service),
                        _: User = Depends(require_permissions([Permissions.Auth.PermissionsPresets.read]))) -> PermissionsPresetListResponse:
-    total = await preset_service.get_count()
-    return PermissionsPresetListResponse(items=[PermissionsPresetResponse.from_entity(preset) for preset in await preset_service.get_list(offset, limit)],
+    total = await preset_service.get_count(filtering_params)
+    return PermissionsPresetListResponse(items=[PermissionsPresetResponse.from_entity(preset) for preset in await preset_service.get_list(filtering_params, sorting_params, offset, limit)],
                                          offset=offset, limit=limit, total=total)
 
 @router.post("")
 async def create(body: PermissionsPresetCreate, preset_service: PermissionsPresetService = Depends(get_permissions_preset_service),
-           _: User = Depends(require_permissions([Permissions.Auth.PermissionsPresets.create]))) -> PermissionsPresetResponse:
+                 _: User = Depends(require_permissions([Permissions.Auth.PermissionsPresets.create]))) -> PermissionsPresetResponse:
     return PermissionsPresetResponse.from_entity(await preset_service.create(body.name, body.permissions))
 
 @router.patch("/{preset_id}")
 async def update_preset(preset_id: UUID, body: PermissionsPresetUpdate,
-                  preset_service: PermissionsPresetService = Depends(get_permissions_preset_service),
-                  _: User = Depends(require_permissions([Permissions.Auth.PermissionsPresets.update]))) -> PermissionsPresetResponse:
+                        preset_service: PermissionsPresetService = Depends(get_permissions_preset_service),
+                        _: User = Depends(require_permissions([Permissions.Auth.PermissionsPresets.update]))) -> PermissionsPresetResponse:
     if body.permissions and not UserPermissionsService.are_permissions_valid(body.permissions):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Permissions list is invalid")
     preset = await preset_service.update(preset_id, name=body.name, permissions=body.permissions)
