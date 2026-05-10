@@ -1,3 +1,7 @@
+from app.presentation.schemas.user import UserFilteringParams
+from fastapi import Query
+from app.domain.enums.role import Role
+from app.domain.enums.gender import Gender
 from uuid import UUID
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -80,3 +84,29 @@ def require_permissions(required_permissions: list[PermissionType]):
         return current_user
 
     return checker
+
+
+def get_user_filtering_params(
+        login: str | None = None,
+        first_name: str | None = None, middle_name: str | None = None,
+        last_name: str | None = None, full_name: str | None = None,
+        gender: Gender | None = None, roles: list[Role] | None = Query(default=None),
+        permissions: list[PermissionType] | None = Query(default=None),
+        grades: list[int] | None = Query(default=None), letters: list[str] | None = Query(default=None),
+        graduation_years: list[int] | None = Query(default=None),
+        class_names: list[str] | None = Query(default=None)
+):
+    return UserFilteringParams(
+        login=login,
+        first_name=first_name,
+        middle_name=middle_name,
+        last_name=last_name,
+        full_name=full_name,
+        gender=gender,
+        roles=roles,
+        permissions=permissions,
+        grades=grades,
+        letters=letters,
+        graduation_years=graduation_years,
+        class_names=class_names
+    )

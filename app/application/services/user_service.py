@@ -9,6 +9,7 @@ from app.domain.enums.permission import PermissionType
 from app.domain.enums.role import Role
 from app.application.interfaces.repositories import IUserRepository
 from app.application.services.key_creator_rotor import KeyRotationManager, RotationJWT
+from app.presentation.schemas.user import UserFilteringParams, UserSortingParams
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ class UserService:
         roles: list[Role],
         gender: Gender,
         middle_name: str | None = None,
-        class_name: str | None = None,
+        grade: int | None = None,
+        letter: str | None = None,
         graduation_year: int | None = None,
         permissions: list[PermissionType] | None = None,
     ) -> User:
@@ -52,7 +54,8 @@ class UserService:
             password_hash=password_hash,
             roles=roles,
             gender=gender,
-            class_name=class_name,
+            grade=grade,
+            letter=letter,
             graduation_year=graduation_year,
             permissions=permissions
         )
@@ -69,7 +72,8 @@ class UserService:
         middle_name: str | None = None,
         roles: list[Role] | None = None,
         gender: Gender | None = None,
-        class_name: str | None = None,
+        grade: int | None = None,
+        letter: str | None = None,
         graduation_year: int | None = None,
         login: str | None = None,
         password_hash: str | None = None,
@@ -89,8 +93,10 @@ class UserService:
             user.roles = roles
         if gender:
             user.gender = gender
-        if class_name:
-            user.class_name = class_name
+        if grade:
+            user.grade = grade
+        if letter:
+            user.letter = letter
         if graduation_year:
             user.graduation_year = graduation_year
         if login:
@@ -109,11 +115,11 @@ class UserService:
             logger.info(f"Пользователь удалён: {user_id}")
         return result
 
-    async def list_users(self, offset: int = 0, limit: int = 20) -> list[User]:
-        return await self._repo.list_(offset, limit)
+    async def list_users(self, filtering_params: UserFilteringParams, sorting_params: UserSortingParams, offset: int = 0, limit: int = 20) -> list[User]:
+        return await self._repo.list_(offset=offset, limit=limit, sort_by=sorting_params.sort_by.value, order=sorting_params.order.value, **filtering_params.model_dump())
 
-    async def count_users(self) -> int:
-        return await self._repo.count()
+    async def count_users(self, filtering_params: UserFilteringParams, sorting_params: UserSortingParams) -> int:
+        return await self._repo.count(**filtering_params.model_dump())
 
     # ==================== Helper methods (только для отладки/администрирования) ====================
     

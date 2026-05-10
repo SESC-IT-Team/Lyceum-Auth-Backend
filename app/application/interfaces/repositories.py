@@ -1,3 +1,5 @@
+from app.domain.enums.role import Role
+from app.domain.enums.gender import Gender
 from datetime import datetime
 from typing import Optional
 from uuid import UUID
@@ -13,8 +15,24 @@ class IUserRepository:
     async def create(self, user: User) -> User: ...
     async def update(self, user: User) -> User: ...
     async def delete(self, user_id: UUID) -> bool: ...
-    async def list_(self, offset: int, limit: int) -> list[User]: ...
-    async def count(self) -> int: ...
+    async def list_(self, login: str | None = None,
+                    first_name: str | None = None, middle_name: str | None = None,
+                    last_name: str | None = None, full_name: str | None = None,
+                    gender: Gender | None = None, roles: list[Role] | None = None,
+                    permissions: list[PermissionType] | None = None,
+                    grades: list[int] | None = None, letters: list[str] | None = None,
+                    graduation_years: list[int] | None = None,
+                    class_names: list[str] | None = None,
+                    sort_by: str | None = None, order: str | None = None,
+                    offset: int = 0, limit: int = 20) -> list[User]: ...
+    async def count(self, login: str,
+                    first_name: str | None = None, middle_name: str | None = None,
+                    last_name: str | None = None, full_name: str | None = None,
+                    gender: Gender | None = None, roles: list[Role] | None = None,
+                    permissions: list[PermissionType] | None = None,
+                    grades: list[int] | None = None, letters: list[str] | None = None,
+                    graduation_years: list[int] | None = None,
+                    class_names: list[str] | None = None) -> int: ...
 
 
 class IRefreshTokenRepository:

@@ -1,3 +1,4 @@
+from sqlalchemy import CheckConstraint
 import uuid
 from datetime import datetime
 
@@ -19,8 +20,11 @@ class UserModel(Base):
     last_name: Mapped[str] = mapped_column(String(255), nullable=False)
     first_name: Mapped[str] = mapped_column(String(255), nullable=False)
     middle_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=True)
     roles: Mapped[list[Role]] = mapped_column(PG_ARRAY(Enum(Role)), nullable=False)
     gender: Mapped[Gender] = mapped_column(Enum(Gender), nullable=False)
+    grade: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    letter: Mapped[str | None] = mapped_column(String(10), nullable=True)
     class_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     graduation_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     login: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
@@ -30,3 +34,8 @@ class UserModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow)
 
     refresh_tokens = relationship("RefreshTokenModel", back_populates="user", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        CheckConstraint("grade BETWEEN 8 AND 11", name="ck_grade"),
+        CheckConstraint("letter ~ '^[А-Я]$'", name="ck_letter"),
+    )

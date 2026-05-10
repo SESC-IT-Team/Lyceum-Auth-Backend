@@ -1,3 +1,5 @@
+from app.presentation.dependencies import get_user_filtering_params
+from app.presentation.schemas.user import UserSortingParams
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,24 +10,26 @@ from app.application.services.auth_service import AuthService
 from app.application.services.user_service import UserService
 from app.domain.enums.permission import Permissions
 from app.presentation.dependencies import get_auth_service, get_user_service, require_permissions
-from app.presentation.schemas.user import UserCreate, UserUpdate, UserResponse, UserListResponse
+from app.presentation.schemas.user import UserCreate, UserUpdate, UserResponse, UserListResponse, UserFilteringParams
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get("", response_model=UserListResponse)
-async def list_users(
-    offset: int = 0,
-    limit: int = 20,
-    user_service: UserService = Depends(get_user_service),
-    _: User = Depends(require_permissions([Permissions.Auth.Users.read])),
-):
+@router.get("")
+async def list_users(offset: int,
+                     limit: int,
+                     filtering_params: UserFilteringParams = Depends(get_user_filtering_params),
+                     sorting_params: UserSortingParams = Depends(),
+                     user_service: UserService = Depends(get_user_service),
+                     _: User = Depends(require_permissions([Permissions.Auth.Users.read])),
+                     ):
+    print(filtering_params)
     if limit <= 0 or limit > 100:
         limit = 20
     if offset < 0:
         offset = 0
-    items = await user_service.list_users(offset=offset, limit=limit)
-    total = await user_service.count_users()
+    items = await user_service.list_users(filtering_params, sorting_params,offset=offset, limit=limit)
+    total = await user_service.count_users(filtering_params, sorting_params)
     return UserListResponse(
         items=[UserResponse.from_entity(e) for e in items],
         total=total,
@@ -68,7 +72,8 @@ async def create_user(
         roles=body.roles,
         gender=body.gender,
         middle_name=body.middle_name,
-        class_name=body.class_name,
+        grade=body.grade,
+        letter=body.letter,
         graduation_year=body.graduation_year
     )
     return UserResponse.from_entity(user)
@@ -97,7 +102,8 @@ async def update_user(
         middle_name=body.middle_name,
         roles=body.roles,
         gender=body.gender,
-        class_name=body.class_name,
+        grade=body.grade,
+        letter=body.letter,
         graduation_year=body.graduation_year,
         permissions=body.permissions,
     )
