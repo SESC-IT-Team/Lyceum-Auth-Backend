@@ -10,8 +10,8 @@ from app.presentation.dependencies import limiter
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from scripts.create_admin import create_admin
-    await create_admin()
+    from scripts.create_admin import create_or_update_admin
+    await create_or_update_admin()
     yield
 
 
