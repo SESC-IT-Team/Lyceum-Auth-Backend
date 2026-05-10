@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Auth API", lifespan=lifespan)
+app = FastAPI(title="Auth API", lifespan=lifespan, root_path=settings.root_path)
 app.state.limiter = limiter
 
 # Настройка CORS – разрешаем фронтенду отправлять куки
