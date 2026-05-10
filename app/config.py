@@ -36,5 +36,7 @@ class Settings(BaseSettings):
     cookie_samesite: str = "lax"
     cookie_domain: str | None = '.localhost'
 
+    root_path: str = '/'
+
 
 settings = Settings()
