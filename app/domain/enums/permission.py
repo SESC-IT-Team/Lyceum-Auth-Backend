@@ -28,6 +28,11 @@ class PermissionType(str, Enum):
     technical_support_orders_set_status = "technical_support:orders:set_status"
     technical_support_orders_set_worker = "technical_support:orders:set_worker"
 
+    # sparvki service
+    spravki_orders_create = "spravki:orders:create"
+    spravki_orders_get_my = "spravki:orders:get_my"
+    spravki_orders_get = "spravki:orders:get"
+
 
 class Permissions:
     class Auth:
@@ -63,6 +68,12 @@ class Permissions:
             get = PermissionType.technical_support_orders_get
             set_status = PermissionType.technical_support_orders_set_status
             set_worker = PermissionType.technical_support_orders_set_worker
+
+    class Spravki:
+        class Orders:
+            create = PermissionType.spravki_orders_create
+            get_my = PermissionType.spravki_orders_get_my
+            get = PermissionType.spravki_orders_get
 
 ALL_PERMISSIONS: set[PermissionType] = {p for p in PermissionType}
 

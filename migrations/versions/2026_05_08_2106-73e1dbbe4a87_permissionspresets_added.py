@@ -34,7 +34,7 @@ permission_enum = postgresql.ENUM(
     'auth_permissions_presets_create',
     'auth_permissions_presets_read',
     'auth_permissions_presets_update',
-    'auth_users_delete',
+    'auth_permissions_presets_delete',
     'auth_basic_permissions_write',
     'auth_keys_revoke',
     'auth_master_permissions_write',
@@ -105,6 +105,7 @@ def downgrade() -> None:
             ALTER TABLE users
             ALTER COLUMN permissions
             TYPE {ENUM_NAME}[]
+            USING permissions::text[]::{ENUM_NAME}[]
             """
     )
 
