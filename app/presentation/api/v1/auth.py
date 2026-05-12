@@ -21,7 +21,7 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         httponly=True,
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
-        domain='auth' + settings.cookie_domain,
+        domain=settings.cookie_domain,
         path="/",  # можно ограничить, но обычно корень
         max_age=settings.jwt_access_expire_minutes * 60,  # секунды
     )
@@ -33,15 +33,15 @@ def set_auth_cookies(response: Response, access_token: str, refresh_token: str):
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
         domain=settings.cookie_domain,
-        path="/api/v1/auth",
+        path="/",
         max_age=settings.jwt_refresh_expire_days * 24 * 60 * 60,
 
     )
 
 def clear_auth_cookies(response: Response):
     """Очищает cookie с токенами."""
-    response.delete_cookie("access_token", path="/", domain='auth' + settings.cookie_domain)
-    response.delete_cookie("refresh_token", path="/api/v1/auth", domain=settings.cookie_domain)
+    response.delete_cookie("access_token", path="/", domain=settings.cookie_domain)
+    response.delete_cookie("refresh_token", path="/", domain=settings.cookie_domain)
 
 
 @router.post("/login", response_model=TokenResponse)
