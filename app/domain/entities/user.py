@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated, Optional
 
 from pydantic import BaseModel, Field, computed_field
@@ -21,6 +22,7 @@ class User(BaseModel):
     roles: list[Role]
     gender: Gender
     permissions: Annotated[list[PermissionType], Field(default_factory=list)]
+    birthday: date | None = None
     middle_name: str | None = None
     grade: int | None = None
     letter: str | None = None

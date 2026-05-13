@@ -1,8 +1,9 @@
+from datetime import date
 from sqlalchemy import CheckConstraint
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, String, Integer, Boolean, Text
+from sqlalchemy import DateTime, Enum, String, Integer, Boolean, Text, Date
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -23,6 +24,7 @@ class UserModel(Base):
     full_name: Mapped[str] = mapped_column(String(255), nullable=True)
     roles: Mapped[list[Role]] = mapped_column(PG_ARRAY(Enum(Role)), nullable=False)
     gender: Mapped[Gender] = mapped_column(Enum(Gender), nullable=False)
+    birthday: Mapped[date | None] = mapped_column(Date, nullable=True)
     grade: Mapped[int | None] = mapped_column(Integer, nullable=True)
     letter: Mapped[str | None] = mapped_column(String(10), nullable=True)
     class_name: Mapped[str | None] = mapped_column(String(64), nullable=True)

@@ -1,3 +1,4 @@
+from typing import Literal
 import logging
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -33,7 +34,7 @@ class Settings(BaseSettings):
 
     # Cookie settings
     cookie_secure: bool = False
-    cookie_samesite: str = "lax"
+    cookie_samesite: Literal['lax', 'none', 'strict'] | None = "lax"
     cookie_domain: str | None = '.localhost'
 
     root_path: str = '/'

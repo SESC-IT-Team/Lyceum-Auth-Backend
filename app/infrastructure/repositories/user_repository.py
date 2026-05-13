@@ -28,6 +28,7 @@ class UserRepository(IUserRepository):
             login=m.login,
             password_hash=m.password_hash,
             roles=m.roles,
+            birthday=m.birthday,
             gender=m.gender,
             permissions=m.permissions,
             middle_name=m.middle_name,
@@ -56,6 +57,7 @@ class UserRepository(IUserRepository):
         m.class_name = m.class_name
         m.graduation_year = e.graduation_year
         m.permissions = e.permissions
+        m.birthday = e.birthday
 
     async def get_by_id(self, user_id: UUID) -> User | None:
         result = await self._session.execute(select(UserModel).where(UserModel.id == user_id))
@@ -69,6 +71,7 @@ class UserRepository(IUserRepository):
 
     async def create(self, user: User) -> User:
         m = self.entity_to_model(user)
+        print(m.birthday)
         self._session.add(m)
         await self._session.flush()
         await self._session.refresh(m)

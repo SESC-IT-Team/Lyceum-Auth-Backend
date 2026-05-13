@@ -1,3 +1,4 @@
+from datetime import date
 from datetime import datetime
 from uuid import UUID, uuid4
 import logging
@@ -40,6 +41,7 @@ class UserService:
         password_hash: str,
         roles: list[Role],
         gender: Gender,
+        birthday: date | None = None,
         middle_name: str | None = None,
         grade: int | None = None,
         letter: str | None = None,
@@ -56,12 +58,14 @@ class UserService:
             login=login,
             password_hash=password_hash,
             roles=roles,
+            birthday=birthday,
             gender=gender,
             grade=grade,
             letter=letter,
             graduation_year=graduation_year,
             permissions=permissions
         )
+        print('service', user.model_dump())
         created = await self._repo.create(user)
         logger.info(f"Пользователь создан: {created.id}, login={login}")
         return created
@@ -80,7 +84,8 @@ class UserService:
         graduation_year: int | None = None,
         login: str | None = None,
         password: str | None = None,
-        permissions: list[PermissionType] | None = None
+        permissions: list[PermissionType] | None = None,
+        birthday: date | None = None,
     ) -> User | None:
         user = await self._repo.get_by_id(user_id)
         if user is None:
@@ -109,6 +114,8 @@ class UserService:
             user.password_hash = password_hash
         if permissions:
             user.permissions = permissions
+        if birthday:
+            user.birthday = birthday
         updated = await self._repo.update(user)
         logger.info(f"Пользователь обновлён: {user_id}")
         return updated

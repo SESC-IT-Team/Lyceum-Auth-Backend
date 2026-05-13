@@ -73,7 +73,8 @@ async def create_user(
         middle_name=body.middle_name,
         grade=body.grade,
         letter=body.letter,
-        graduation_year=body.graduation_year
+        graduation_year=body.graduation_year,
+        birthday=body.birthday,
     )
     return UserResponse.from_entity(user)
 
@@ -106,6 +107,7 @@ async def update_user(
         graduation_year=body.graduation_year,
         permissions=body.permissions,
         password=body.password,
+        birthday=body.birthday,
     )
     if updated is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

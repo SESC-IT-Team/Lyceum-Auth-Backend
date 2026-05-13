@@ -1,3 +1,4 @@
+from datetime import date
 from fastapi import Query
 from datetime import datetime
 from uuid import UUID
@@ -24,6 +25,7 @@ class UserCreate(BaseModel):
     grade: int | None = None
     letter: str | None = None
     graduation_year: int | None = None
+    birthday: date | None = None
 
 
 class UserUpdate(BaseModel):
@@ -37,6 +39,7 @@ class UserUpdate(BaseModel):
     password: str | None = None
     graduation_year: int | None = None
     permissions: list[PermissionType] | None = None
+    birthday: date | None = None
 
 
 class UserResponse(BaseModel):
@@ -49,6 +52,7 @@ class UserResponse(BaseModel):
     roles: list[Role]
     permissions: list[PermissionType]
     gender: Gender
+    birthday: date | None
     grade: int | None
     letter: str | None
     class_name: str | None
