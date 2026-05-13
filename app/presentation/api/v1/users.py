@@ -23,7 +23,6 @@ async def list_users(offset: int,
                      user_service: UserService = Depends(get_user_service),
                      _: User = Depends(require_permissions([Permissions.Auth.Users.read])),
                      ):
-    print(filtering_params)
     if limit <= 0 or limit > 100:
         limit = 20
     if offset < 0:
@@ -106,6 +105,7 @@ async def update_user(
         letter=body.letter,
         graduation_year=body.graduation_year,
         permissions=body.permissions,
+        password=body.password,
     )
     if updated is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

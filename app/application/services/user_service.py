@@ -2,6 +2,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 import logging
 
+from app.application.services.auth_service import AuthService
 from app.application.services.user_permissions_service import UserPermissionsService
 from app.domain.entities.user import User
 from app.domain.enums.gender import Gender
@@ -18,10 +19,12 @@ class UserService:
     def __init__(
         self, 
         user_repository: IUserRepository,
-        key_manager: KeyRotationManager | None = None,  # Опционально, для отладки
+        auth_service: AuthService,
+        key_manager: KeyRotationManager | None = None,
     ):
         self._repo = user_repository
         self._key_manager = key_manager  # Только для чтения/отладки
+        self._auth_service = auth_service
 
     async def get_by_id(self, user_id: UUID) -> User | None:
         return await self._repo.get_by_id(user_id)
@@ -76,7 +79,7 @@ class UserService:
         letter: str | None = None,
         graduation_year: int | None = None,
         login: str | None = None,
-        password_hash: str | None = None,
+        password: str | None = None,
         permissions: list[PermissionType] | None = None
     ) -> User | None:
         user = await self._repo.get_by_id(user_id)
@@ -101,7 +104,8 @@ class UserService:
             user.graduation_year = graduation_year
         if login:
             user.login = login
-        if password_hash:
+        if password:
+            password_hash = self._auth_service.hash_password(password)
             user.password_hash = password_hash
         if permissions:
             user.permissions = permissions

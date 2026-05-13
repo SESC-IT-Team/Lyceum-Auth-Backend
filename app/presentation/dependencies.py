@@ -31,8 +31,8 @@ def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
     )
 
 
-def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
-    return UserService(user_repository=UserRepository(db))
+def get_user_service(db: AsyncSession = Depends(get_db), auth_service: AuthService = Depends(get_auth_service)) -> UserService:
+    return UserService(user_repository=UserRepository(db), auth_service=auth_service)
 
 
 def get_permissions_preset_service(db: AsyncSession = Depends(get_db)) -> PermissionsPresetService:

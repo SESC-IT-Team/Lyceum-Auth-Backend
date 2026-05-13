@@ -1,6 +1,7 @@
 import logging
 
 import jwt as pyjwt
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicKey
 from jose import JWTError
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
@@ -291,7 +292,8 @@ class KeyRotationManager:
         """Формирование JWKS для публикации"""
         keys = []
         for kid, data in self._keys.items():
-            public_key = serialization.load_pem_public_key(
+            # pyrefly: ignore [bad-assignment]
+            public_key: RSAPublicKey = serialization.load_pem_public_key(
                 data["public"].encode(), backend=default_backend()
             )
             numbers = public_key.public_numbers()
@@ -345,7 +347,8 @@ class RotationJWT:
             kid = unverified_header.get("kid")
             if not kid:
                 raise JWTError("Отсутствует kid в заголовке токена")
-            alg = unverified_header.get("alg")
+            # pyrefly: ignore [bad-assignment]
+            alg: str = unverified_header.get("alg")
             if alg not in self._ALLOWED_ALGORITHMS:
                 raise JWTError(
                     f"Алгоритм '{alg}' не разрешён. Допустимые: {list(self._ALLOWED_ALGORITHMS)}"

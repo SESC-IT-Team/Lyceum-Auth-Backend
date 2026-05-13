@@ -16,7 +16,7 @@ async def create_or_update_admin() -> None:
         user_repository = UserRepository(session)
         refresh_token_repository = RefreshTokenRepository(session)
         auth_service = AuthService(user_repository, refresh_token_repository)
-        user_service = UserService(user_repository)
+        user_service = UserService(user_repository, auth_service)
 
         existing_user = await user_service.get_by_login(settings.admin_login)
         if existing_user is not None:
