@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 from slowapi import middleware
 
+from app.domain.enums.departments import Department
 from app.domain.enums.gender import Gender
 from app.domain.enums.permission import PermissionType
 from app.domain.enums.role import Role
@@ -20,6 +21,7 @@ class User(BaseModel):
     login: str
     password_hash: str
     roles: list[Role]
+    department: Department | None = None
     gender: Gender
     permissions: Annotated[list[PermissionType], Field(default_factory=list)]
     birthday: date | None = None

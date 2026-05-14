@@ -7,6 +7,7 @@ from pydantic import BaseModel, field_validator
 
 from app.application.services.user_permissions_service import UserPermissionsService
 from app.domain.entities.user import User
+from app.domain.enums.departments import Department
 from app.domain.enums.gender import Gender
 from app.domain.enums.permission import PermissionType
 from app.domain.enums.role import Role
@@ -26,6 +27,7 @@ class UserCreate(BaseModel):
     letter: str | None = None
     graduation_year: int | None = None
     birthday: date | None = None
+    department: Department | None = None
 
 
 class UserUpdate(BaseModel):
@@ -40,6 +42,7 @@ class UserUpdate(BaseModel):
     graduation_year: int | None = None
     permissions: list[PermissionType] | None = None
     birthday: date | None = None
+    department: Department | None = None
 
 
 class UserResponse(BaseModel):
@@ -51,6 +54,7 @@ class UserResponse(BaseModel):
     gender: Gender
     roles: list[Role]
     permissions: list[PermissionType]
+    department: Department | None
     gender: Gender
     birthday: date | None
     grade: int | None

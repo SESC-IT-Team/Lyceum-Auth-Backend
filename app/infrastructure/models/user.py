@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.dialects.postgresql import ARRAY as PG_ARRAY
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.domain.enums.departments import Department
 from app.domain.enums.gender import Gender
 from app.domain.enums.permission import PermissionType
 from app.domain.enums.role import Role
@@ -23,6 +24,7 @@ class UserModel(Base):
     middle_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     full_name: Mapped[str] = mapped_column(String(255), nullable=True)
     roles: Mapped[list[Role]] = mapped_column(PG_ARRAY(Enum(Role)), nullable=False)
+    department: Mapped[Department | None] = mapped_column(Enum(Department), nullable=True)
     gender: Mapped[Gender] = mapped_column(Enum(Gender), nullable=False)
     birthday: Mapped[date | None] = mapped_column(Date, nullable=True)
     grade: Mapped[int | None] = mapped_column(Integer, nullable=True)
