@@ -6,6 +6,7 @@ import logging
 from app.application.services.auth_service import AuthService
 from app.application.services.user_permissions_service import UserPermissionsService
 from app.domain.entities.user import User
+from app.domain.enums.departments import Department
 from app.domain.enums.gender import Gender
 from app.domain.enums.permission import PermissionType
 from app.domain.enums.role import Role
@@ -47,6 +48,7 @@ class UserService:
         letter: str | None = None,
         graduation_year: int | None = None,
         permissions: list[PermissionType] | None = None,
+        department: Department | None = None,
     ) -> User:
         if not permissions:
             permissions = []
@@ -63,7 +65,8 @@ class UserService:
             grade=grade,
             letter=letter,
             graduation_year=graduation_year,
-            permissions=permissions
+            permissions=permissions,
+            department=department
         )
         print('service', user.model_dump())
         created = await self._repo.create(user)
@@ -86,6 +89,7 @@ class UserService:
         password: str | None = None,
         permissions: list[PermissionType] | None = None,
         birthday: date | None = None,
+        department: Department | None = None,
     ) -> User | None:
         user = await self._repo.get_by_id(user_id)
         if user is None:
@@ -109,6 +113,8 @@ class UserService:
             user.graduation_year = graduation_year
         if login:
             user.login = login
+        if department:
+            user.department = department
         if password:
             password_hash = self._auth_service.hash_password(password)
             user.password_hash = password_hash

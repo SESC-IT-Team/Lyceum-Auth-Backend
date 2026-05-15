@@ -35,6 +35,7 @@ class UserRepository(IUserRepository):
             grade=m.grade,
             letter=m.letter,
             graduation_year=m.graduation_year,
+            department=m.department,
             created_at=m.created_at,
             updated_at=m.updated_at
         )
@@ -58,6 +59,7 @@ class UserRepository(IUserRepository):
         m.graduation_year = e.graduation_year
         m.permissions = e.permissions
         m.birthday = e.birthday
+        m.department = e.department
 
     async def get_by_id(self, user_id: UUID) -> User | None:
         result = await self._session.execute(select(UserModel).where(UserModel.id == user_id))
@@ -71,7 +73,6 @@ class UserRepository(IUserRepository):
 
     async def create(self, user: User) -> User:
         m = self.entity_to_model(user)
-        print(m.birthday)
         self._session.add(m)
         await self._session.flush()
         await self._session.refresh(m)
