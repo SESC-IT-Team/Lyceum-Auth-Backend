@@ -26,7 +26,7 @@ services:
       - traefik.http.routers.auth-api-secure.rule=Host(`${DOMAIN}`) && PathPrefix(`/auth-back`)
       - traefik.http.routers.auth-api-secure.entrypoints=websecure
       - traefik.http.routers.auth-api-secure.tls=true
-      - traefik.http.routers.auth-api-secure.tls.certresolver=letsencrypt
+      - traefik.http.routers.auth-api-secure.tls.certresolver=${TLS_RESOLVER:-letsencrypt}
       - traefik.http.routers.auth-api-secure.middlewares=auth-api-strip
       - traefik.http.middlewares.auth-api-strip.stripprefix.prefixes=/auth-back
       - traefik.http.services.auth-api.loadbalancer.server.port=8000
