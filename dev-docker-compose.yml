@@ -28,40 +28,5 @@ services:
       logging: "promtail"
       service: "lyceum-auth-backend"
 
-  loki:
-    image: grafana/loki:3.0.0
-    container_name: lyceum-loki
-    restart: unless-stopped
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/loki-config.yml
-    volumes:
-      - ./loki-config.yml:/etc/loki/loki-config.yml:ro
-      - loki-data:/loki
-
-  promtail:
-    image: grafana/promtail:3.0.0
-    container_name: lyceum-promtail
-    restart: unless-stopped
-    command: -config.file=/etc/promtail/promtail-config.yml
-    volumes:
-      - ./promtail-config.yml:/etc/promtail/promtail-config.yml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - loki
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: lyceum-grafana
-    restart: unless-stopped
-    ports:
-      - "3001:3000"
-    depends_on:
-      - loki
-    volumes:
-      - grafana-data:/var/lib/grafana
-
 volumes:
   postgres-data:
-  loki-data:
-  grafana-data:
