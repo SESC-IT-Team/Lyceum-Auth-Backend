@@ -18,6 +18,7 @@ services:
       - app_network
       - traefik-public
     labels:
+      - logging=promtail
       - traefik.enable=true
       - traefik.docker.network=traefik-public
       - traefik.http.routers.auth-api.rule=Host(`${DOMAIN}`) && PathPrefix(`/auth-back`)
