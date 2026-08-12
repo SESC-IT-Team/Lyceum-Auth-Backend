@@ -12,6 +12,7 @@ class UserSortableField(str, Enum):
     graduation_year = "graduation_year"
     login = "login"
     gender = "gender"
+    lives_in_dormitory = "lives_in_dormitory"
 
     created_at = "created_at"
     updated_at = "updated_at"

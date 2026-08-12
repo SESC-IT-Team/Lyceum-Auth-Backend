@@ -23,7 +23,7 @@ services:
     env_file:
       - .env
     ports:
-      - "3000:3000"
+      - "8000:8000"
     labels:
       logging: "promtail"
       service: "lyceum-auth-backend"

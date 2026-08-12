@@ -1,112 +1,58 @@
+from uuid import UUID
+
+from sesc_auth_sdk.dependencies import LyceumAuth, create_jwks_manager_dependency
+from sesc_auth_sdk.services.jwks_manager import JWKSManager
+from sesc_auth_sdk.services.m2m_auth_service import M2MAuthService
+from sesc_openfga_sdk.lyceum_openfga_service import LyceumOpenFGAService
+
+from app.application.services.authentik_service import AuthentikService
+from app.application.services.department_service import DepartmentService
+from app.config import settings
 from app.presentation.schemas.user import UserFilteringParams
 from fastapi import Query
-from app.domain.enums.role import Role
-from app.domain.enums.gender import Gender
-from uuid import UUID
+from sesc_auth_sdk.enums.role import Role
+from sesc_auth_sdk.enums.gender import Gender
 from fastapi import Depends, HTTPException, status, Request
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User
-from app.domain.enums.permission import PermissionType
-from app.application.services.permissions_preset_service import PermissionsPresetService
-from app.application.services.auth_service import AuthService
 from app.application.services.user_service import UserService
 from app.infrastructure.database import get_db
 from app.infrastructure.repositories.user_repository import UserRepository
-from app.infrastructure.repositories.refresh_token_repository import RefreshTokenRepository
-from app.infrastructure.repositories.permissions_preset_repository import PermissionsPresetRepository
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-security_bearer = HTTPBearer(auto_error=False)
-
 limiter = Limiter(key_func=get_remote_address)
 
-
-def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
-    return AuthService(
-        user_repository=UserRepository(db),
-        refresh_token_repository=RefreshTokenRepository(db),
-    )
+jwks_manager = JWKSManager(settings.token_validation_settings)
+openfga_m2m_service = M2MAuthService(settings.openfga_m2m_settings)
 
 
-def get_user_service(db: AsyncSession = Depends(get_db), auth_service: AuthService = Depends(get_auth_service)) -> UserService:
-    return UserService(user_repository=UserRepository(db), auth_service=auth_service)
+def get_authentik_service() -> AuthentikService:
+    return AuthentikService(settings.authentik_url, settings.users_path, settings.sa_auth_admin_app_api_token)
+
+def get_openfga_service():
+    return LyceumOpenFGAService(settings.openfga_settings, openfga_m2m_service)
+
+def get_user_service(db: AsyncSession = Depends(get_db), auth_service: AuthentikService = Depends(get_authentik_service),
+                     openfga_service: LyceumOpenFGAService = Depends(get_openfga_service)) -> UserService:
+    return UserService(user_repository=UserRepository(db), authentik_service=auth_service, openfga_service=openfga_service)
+
+class Auth(LyceumAuth):
+    _get_jwks_manager = create_jwks_manager_dependency(jwks_manager)
+
+    # pyrefly: ignore [bad-override]
+    async def return_user(self, token: str = Depends(LyceumAuth._get_token), user_service: UserService = Depends(get_user_service)) -> User:
+        payload = await self(token)
+        user = await user_service.get_user_by_id(payload.sub)
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        if self._allowed_roles and not any(map(lambda r: r in self._allowed_roles, user.roles)):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User does not have any of allowed roles.")
+        return user
 
 
-def get_permissions_preset_service(db: AsyncSession = Depends(get_db)) -> PermissionsPresetService:
-    return PermissionsPresetService(preset_repository=PermissionsPresetRepository(db))
-
-
-async def get_token_from_header_or_cookie(
-        request: Request,
-        credentials: HTTPAuthorizationCredentials | None = Depends(security_bearer)
-) -> str | None:
-    """Извлекает access token из заголовка Authorization или из cookie."""
-    if credentials and credentials.credentials:
-        return credentials.credentials
-    # fallback to cookie
-    return request.cookies.get("access_token")
-
-
-async def get_current_user(
-        token: str | None = Depends(get_token_from_header_or_cookie),
-        auth_service: AuthService = Depends(get_auth_service),
-) -> User:
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-        )
-    payload = auth_service.verify_access_token(token)
-    if payload is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-    user = await auth_service.get_user_by_id(payload["user_id"])
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-    return user
-
-
-def require_permissions(required_permissions: list[PermissionType]):
-    async def checker(current_user: User = Depends(get_current_user)) -> User:
-        if any(p not in current_user.permissions for p in required_permissions):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions",
-            )
-        return current_user
-
-    return checker
-
-
-def get_user_filtering_params(
-        login: str | None = None,
-        first_name: str | None = None, middle_name: str | None = None,
-        last_name: str | None = None, full_name: str | None = None,
-        gender: Gender | None = None, roles: list[Role] | None = Query(default=None),
-        permissions: list[PermissionType] | None = Query(default=None),
-        grades: list[int] | None = Query(default=None), letters: list[str] | None = Query(default=None),
-        graduation_years: list[int] | None = Query(default=None),
-        class_names: list[str] | None = Query(default=None)
-):
-    return UserFilteringParams(
-        login=login,
-        first_name=first_name,
-        middle_name=middle_name,
-        last_name=last_name,
-        full_name=full_name,
-        gender=gender,
-        roles=roles,
-        permissions=permissions,
-        grades=grades,
-        letters=letters,
-        graduation_years=graduation_years,
-        class_names=class_names
-    )
+def get_department_service(openfga_service: LyceumOpenFGAService = Depends(get_openfga_service),
+                           user_service: UserService = Depends(get_user_service)):
+    return DepartmentService(openfga_service, user_service)

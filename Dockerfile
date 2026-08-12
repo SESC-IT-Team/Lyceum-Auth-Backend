@@ -1,16 +1,20 @@
-FROM python:3.11-slim
+FROM python:3.13.14-alpine
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends curl bash && rm -rf /var/lib/apt/lists/*
+# Install system dependencies using Alpine's package manager (apk)
+RUN apk add --no-cache git curl bash
+
+# Install uv and dependencies
 RUN pip install --no-cache-dir uv
 COPY pyproject.toml README.md ./
 RUN uv sync --no-dev
 
+# Copy application files and set permissions
 COPY . .
 RUN chmod +x entrypoint.sh
+
 ENV PYTHONPATH=/app
 EXPOSE 8000
-# CMD ["./entrypoint.sh"]
-# CMD ["tail", "-f", "/dev/null"]
+
 CMD ["bash", "./entrypoint.sh"]
