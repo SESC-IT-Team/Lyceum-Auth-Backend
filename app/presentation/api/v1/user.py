@@ -1,6 +1,7 @@
 from sesc_auth_sdk.enums.role import Role
 from sesc_auth_sdk.enums.scope import Scope
 
+from app.domain.enums.user_sortable_field import UserSortableField
 from app.presentation.dependencies import get_user_service
 from uuid import UUID
 
@@ -8,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 
 from app.domain.entities.user import User
 from app.application.services.user_service import UserService
-from app.presentation.schemas.pagination import PaginationQueryParams
+from app.presentation.schemas.pagination_and_sorting import PaginationAndSortingQueryParams
 from app.presentation.schemas.user import UserCreate, UserInfoUpdate, UserResponse, UserListResponse, \
     UserFilteringParams, UpdateUserParentsOrChildrenRequest, UserSortingParams, \
     UserPasswordUpdate
@@ -34,10 +35,8 @@ async def get_my_children(child_id: UUID, token_payload: AccessTokenPayload = De
 
 @router.get("")
 async def list_users(
-        offset: int,
-        limit: int,
-        filtering_params: UserFilteringParams = Depends(UserFilteringParams),
-        sorting_params: UserSortingParams = Depends(),
+        pagination_and_sorting_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
+        filtering_params: UserFilteringParams = Depends(),
         user_service: UserService = Depends(get_user_service),
         _: User = Depends(Auth([Scope.auth_users_read]).restrict_roles_and_return_user([Role.admin])),
 ) -> UserListResponse:
@@ -131,11 +130,9 @@ async def delete_user(
 @router.get('/{user_id}/parents')
 async def get_user_parents(
         user_id: UUID,
-        offset: int = 0,
-        limit: int = 10,
-        user_service: UserService = Depends(get_user_service),
+        pagination_and_sorting_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
         filtering_params: UserFilteringParams = Depends(),
-        sorting_params: UserSortingParams = Depends(),
+        user_service: UserService = Depends(get_user_service),
         _: User = Depends(Auth([Scope.auth_users_read]).restrict_roles_and_return_user([Role.admin]))
 ) -> UserListResponse:
     return UserListResponse(
@@ -160,11 +157,9 @@ async def update_user_parents(
 @router.get('/{user_id}/children')
 async def get_user_children(
         user_id: UUID,
-        offset: int = 0,
-        limit: int = 10,
-        user_service: UserService = Depends(get_user_service),
+        pagination_and_soring_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
         filtering_params: UserFilteringParams = Depends(),
-        sorting_params: UserSortingParams = Depends(),
+        user_service: UserService = Depends(get_user_service),
         _: User = Depends(Auth([Scope.auth_users_read]).restrict_roles_and_return_user([Role.admin]))
 ) -> UserListResponse:
     return UserListResponse(
@@ -189,5 +184,5 @@ async def update_user_parents(
 @router.get("/")
 async def test_token_payload(filters: UserFilteringParams = Depends(),
                              sorting: UserSortingParams = Depends(),
-                             pagination: PaginationQueryParams = Depends()):
+                             pagination: PaginationAndSortingQueryParams[UserSortableField] = Depends()):
     print(filters, sorting, pagination)

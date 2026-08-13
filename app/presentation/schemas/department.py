@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.domain.enums.department_member_position import DepartmentMemberPosition
+from sesc_auth_sdk.enums import DepartmentMemberPosition
 
 
 class DepartmentMemberResponse(BaseModel):

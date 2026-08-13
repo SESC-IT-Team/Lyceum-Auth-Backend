@@ -1,3 +1,5 @@
+from app.domain.entities.user_filters import UserFilters
+from app.domain.entities.pagination_and_sorting import PaginationAndSorting
 from copy import deepcopy
 from datetime import date
 from uuid import UUID, uuid4
@@ -23,12 +25,10 @@ class UserService:
     def __init__(
         self, 
         user_repository: IUserRepository,
-        authentik_service: AuthentikService,
-        openfga_service: LyceumOpenFGAService
+        authentik_service: AuthentikService
     ):
         self._repo = user_repository
         self._auth_service = authentik_service
-        self._openfga_service = openfga_service
 
     async def check_user_exists_by_id_or_raise(self, user_id: UUID) -> None:
         user = await self._repo.get_by_id(user_id)
@@ -159,84 +159,39 @@ class UserService:
         logger.info(f"User password update successful user_id={user_id}")
 
     async def list_users(
-            self, ids: list[UUID] | None = None, search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
-            sort_by: UserSortableField = UserSortableField.created_at,
-            order: SortingOrder = SortingOrder.descending,
-            offset: int = 0, limit: int = 20
+            self,
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            user_filters: UserFilters = UserFilters()
     ) -> list[User]:
-        return await self._repo.get_users(
-            offset=offset, limit=limit,
-            sort_by=sort_by.value, order=order.value,
-            ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory)
+        return await self._repo.get_users(pagination_and_sorting, user_filters)
 
     async def count_users(
-            self, ids: list[UUID] | None = None, search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None
+            self,
+            user_filters: UserFilters = UserFilters()
     ) -> int:
-        return await self._repo.count_users(
-            ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory)
+        return await self._repo.count_users(user_filters)
 
     async def get_parents_by_child_id(
-            self, user_id: UUID, ids: list[UUID] | None = None, search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
-            sort_by: UserSortableField = UserSortableField.created_at,
-            order: SortingOrder = SortingOrder.descending,
-            offset: int = 0, limit: int = 20
+            self, user_id: UUID,
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            user_filters: UserFilters = UserFilters()
     ) -> list[User]:
         await self.check_user_exists_by_id_or_raise(user_id)
         parents = await self._repo.get_user_parents(
             user_id,
-            ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory,
-            sort_by=sort_by.value, order=order.value,
-            offset=offset, limit=limit
+            pagination_and_sorting,
+            user_filters
         )
         return parents
 
     async def count_parents_by_child_id(
-            self, user_id: UUID, ids: list[UUID] | None = None, search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
+            self, user_id: UUID,
+            user_filters: UserFilters = UserFilters()
     ) -> int:
         await self.check_user_exists_by_id_or_raise(user_id)
         return await self._repo.count_user_parents(
             user_id,
-            ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory,
+            user_filters
         )
 
     async def update_parents_by_child_id(
@@ -251,56 +206,35 @@ class UserService:
         if user_id in parent_ids_to_add or user_id in parent_ids_to_delete:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User cannot be parent of themselves')
         await self.check_user_exists_by_id_or_raise(user_id)
-        found_parents_to_delete = await self._repo.get_user_parents(user_id, ids=parent_ids_to_delete, offset=0, limit=len(parent_ids_to_delete))
-        found_parents_to_add = await self._repo.get_user_parents(user_id, ids=parent_ids_to_add, offset=0, limit=len(parent_ids_to_add))
-        if found_parents_to_add or len(found_parents_to_delete) != len(parent_ids_to_delete):
+        found_parents_to_delete_count = await self._repo.count_user_parents(user_id, UserFilters(ids=parent_ids_to_delete))
+        found_parents_to_add_count = await self._repo.count_user_parents(user_id, UserFilters(ids=parent_ids_to_add))
+        if found_parents_to_add_count > 0 or found_parents_to_delete_count != len(parent_ids_to_delete):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail='Some parents already added or already deleted')
         await self._repo.update_user_parents(user_id, parent_ids_to_add, parent_ids_to_delete)
         logger.info(f"User parents update successful user_id={user_id}")
 
     async def get_children_by_parent_id(
-            self, user_id: UUID, ids: list[UUID] | None = None, search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
-            sort_by: UserSortableField = UserSortableField.created_at,
-            order: SortingOrder = SortingOrder.descending,
-            offset: int = 0, limit: int = 20
+            self, user_id: UUID,
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            user_filters: UserFilters = UserFilters()
     ) -> list[User]:
         await self.check_user_exists_by_id_or_raise(user_id)
         parents = await self._repo.get_user_children(
             user_id,
-            ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory,
-            sort_by=sort_by.value, order=order.value,
-            offset=offset, limit=limit
+            pagination_and_sorting,
+            user_filters
         )
         return parents
 
     async def count_children_by_parent_id(
-            self, user_id: UUID, ids: list[UUID] | None = None, search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
+            self, user_id: UUID,
+            user_filters: UserFilters = UserFilters()
     ) -> int:
         await self.check_user_exists_by_id_or_raise(user_id)
         return await self._repo.count_user_children(
             user_id,
-            ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory,
+            user_filters
         )
 
     async def update_children_by_parent_id(
@@ -315,9 +249,9 @@ class UserService:
         if user_id in child_ids_to_add or user_id in child_ids_to_delete:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User cannot be child of themselves')
         await self.check_user_exists_by_id_or_raise(user_id)
-        found_children_to_delete = await self._repo.get_user_children(user_id, ids=child_ids_to_delete, offset=0, limit=len(child_ids_to_delete))
-        found_children_to_add = await self._repo.get_user_children(user_id, ids=child_ids_to_add, offset=0, limit=len(child_ids_to_add))
-        if found_children_to_add or len(found_children_to_delete) != len(child_ids_to_delete):
+        found_children_to_delete_count = await self._repo.count_user_children(user_id, UserFilters(ids=child_ids_to_delete))
+        found_children_to_add_count = await self._repo.count_user_children(user_id, UserFilters(ids=child_ids_to_add))
+        if found_children_to_add_count > 0 or found_children_to_delete_count != len(child_ids_to_delete):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail='Some children already added or already deleted')
         await self._repo.update_user_children(user_id, child_ids_to_add, child_ids_to_delete)

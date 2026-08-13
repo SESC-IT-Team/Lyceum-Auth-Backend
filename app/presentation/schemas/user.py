@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 from app.domain.entities.user import User
 from sesc_auth_sdk.enums.gender import Gender
 from sesc_auth_sdk.enums.role import Role
+
+from app.domain.entities.user_filters import UserFilters
 from app.domain.enums.sorting_order import SortingOrder
 from app.domain.enums.user_sortable_field import UserSortableField
 
@@ -82,9 +84,8 @@ class UserFilteringParams(BaseModel):
     class_names: list[str] | None = Field(default=Query(default=None, description='Filter users by class_names'))
     lives_in_dormitory: bool | None = Field(default=Query(default=None, description='Filter users by lives_in_dormitory attr'))
 
-class UserSortingParams(BaseModel):
-    sort_by: UserSortableField = Field(default=Query(UserSortableField.created_at, description='Sort_by attr'))
-    order: SortingOrder = Field(default=Query(default=SortingOrder.descending, description='Sorting order'))
+    def to_entity(self) -> UserFilters:
+        return UserFilters(**self.model_dump())
 
 class UpdateUserParentsOrChildrenRequest(BaseModel):
     ids_to_add: list[UUID] | None = None

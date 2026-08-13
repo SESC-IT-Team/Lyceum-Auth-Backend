@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sesc_auth_sdk.enums import DepartmentMemberRole, Department
+from sesc_auth_sdk.enums import DepartmentMemberPosition, Department
 from sqlalchemy import ForeignKey, Enum, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
@@ -28,8 +28,8 @@ class DepartmentMemberModel(Base):
         Enum(Department),
         nullable=False,
     )
-    role: Mapped[DepartmentMemberRole] = mapped_column(
-        Enum(DepartmentMemberRole),
+    position: Mapped[DepartmentMemberPosition] = mapped_column(
+        Enum(DepartmentMemberPosition),
         nullable=False
     )
 

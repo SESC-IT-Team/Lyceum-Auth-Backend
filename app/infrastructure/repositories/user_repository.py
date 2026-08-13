@@ -1,25 +1,19 @@
-from sqlalchemy import insert
+from app.domain.entities.user_filters import UserFilters
+from app.domain.enums.user_sortable_field import UserSortableField
+from app.domain.entities.pagination_and_sorting import PaginationAndSorting
 from sqlalchemy import delete
 
 from app.infrastructure.models import ParentChildModel
-from app.infrastructure.repositories.helpers.sorting_and_pagination import apply_sorting_and_pagination
+from app.infrastructure.repositories.helpers.pagination_and_sorting import apply_pagination_and_sorting
 from app.infrastructure.repositories.helpers.user_filtering import apply_user_filters_to_query
-from sesc_auth_sdk.enums.gender import Gender
-from sqlalchemy import UnaryExpression
-from typing import Callable
-from typing import Any
-from sqlalchemy.orm import Mapped, aliased
+from sqlalchemy.orm import aliased
 from uuid import UUID
 
 from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
-from sqlalchemy.ext.asyncio import AsyncSession, session
-from sqlalchemy.orm.util import AliasedClass
-from sqlalchemy.sql.selectable import Select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User
 from app.application.interfaces.repositories import IUserRepository
-from sesc_auth_sdk.enums.role import Role
 from app.infrastructure.models.user import UserModel
 
 
@@ -29,23 +23,7 @@ class UserRepository(IUserRepository):
 
     @staticmethod
     def model_to_entity(m: UserModel) -> User:
-        return User(
-            id=m.id,
-            pk=m.pk,
-            last_name=m.last_name,
-            first_name=m.first_name,
-            login=m.login,
-            roles=m.roles,
-            birthday=m.birthday,
-            gender=m.gender,
-            middle_name=m.middle_name,
-            grade=m.grade,
-            letter=m.letter,
-            graduation_year=m.graduation_year,
-            lives_in_dormitory=m.lives_in_dormitory,
-            created_at=m.created_at,
-            updated_at=m.updated_at
-        )
+        return User.model_validate(m, from_attributes=True)
 
     @staticmethod
     def entity_to_model(e: User) -> UserModel:
@@ -101,56 +79,29 @@ class UserRepository(IUserRepository):
         return True
 
     async def get_users(
-            self, ids: list[UUID] | None = None, search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
-            sort_by: str = 'created_at', order: str = 'desc',
-            offset: int = 0, limit: int = 20
+            self,
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            user_filters: UserFilters = UserFilters()
     ) -> list[User]:
         query = select(UserModel)
-        query = apply_user_filters_to_query(
-            query, ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory)
-        query = apply_sorting_and_pagination(query, UserModel, sort_by, order, offset, limit)
+        query = apply_user_filters_to_query(query, user_filters=user_filters)
+        query = apply_pagination_and_sorting(query, UserModel, pagination_and_sorting)
         result = await self._session.execute(query)
         return [self.model_to_entity(m) for m in result.scalars().all()]
 
     async def count_users(
-            self, ids: list[UUID] | None = None, search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None
+            self,
+            user_filters: UserFilters = UserFilters()
     ) -> int:
         query = select(func.count()).select_from(UserModel)
-        query = apply_user_filters_to_query(
-            query, ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory)
+        query = apply_user_filters_to_query(query, user_filters=user_filters)
         result = await self._session.execute(query)
         return result.scalar() or 0
 
     async def get_user_parents(
-            self, user_id: UUID, ids: list[UUID] | None = None,
-            search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
-            sort_by: str = 'created_at', order: str = 'desc',
-            offset: int = 0, limit: int = 20
+            self, user_id: UUID,
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            user_filters: UserFilters = UserFilters()
     ) -> list[User]:
         parent_user = aliased(UserModel, name='parent_user')
         query = (
@@ -158,26 +109,14 @@ class UserRepository(IUserRepository):
             .join(UserModel.parents.of_type(parent_user))
             .where(UserModel.id == user_id)
         )
-        query = apply_user_filters_to_query(
-            query, alias=parent_user,
-            ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory)
-        query = apply_sorting_and_pagination(query, parent_user, sort_by, order, offset, limit)
+        query = apply_user_filters_to_query(query, parent_user, user_filters)
+        query = apply_pagination_and_sorting(query, parent_user, pagination_and_sorting)
         result = await self._session.execute(query)
         return [self.model_to_entity(m) for m in result.scalars().all()]
 
     async def count_user_parents(
-            self, user_id: UUID, ids: list[UUID] | None = None,
-            search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None
+            self, user_id: UUID,
+            user_filters: UserFilters = UserFilters()
     ) -> int:
         parent_user = aliased(UserModel, name='parent_user')
         query = (
@@ -185,14 +124,7 @@ class UserRepository(IUserRepository):
             .join(UserModel.parents.of_type(parent_user))
             .where(UserModel.id == user_id)
         )
-        query = apply_user_filters_to_query(
-            query, alias=parent_user,
-            ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory)
+        query = apply_user_filters_to_query(query, parent_user, user_filters)
         result = await self._session.execute(query)
         return result.scalar() or 0
 
@@ -210,15 +142,9 @@ class UserRepository(IUserRepository):
             await self._session.flush()
 
     async def get_user_children(
-            self, user_id: UUID, ids: list[UUID] | None = None,
-            search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
-            sort_by: str = 'created_at', order: str = 'desc',
-            offset: int = 0, limit: int = 20
+            self, user_id: UUID,
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            user_filters: UserFilters = UserFilters()
     ) -> list[User]:
         child_user = aliased(UserModel, name='child_user')
         query = (
@@ -226,26 +152,15 @@ class UserRepository(IUserRepository):
             .join(UserModel.children.of_type(child_user))
             .where(UserModel.id == user_id)
         )
-        query = apply_user_filters_to_query(
-            query, alias=child_user,
-            ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory)
-        query = apply_sorting_and_pagination(query, child_user, sort_by, order, offset, limit)
+        query = apply_user_filters_to_query(query, child_user, user_filters)
+        query = apply_pagination_and_sorting(query, child_user, pagination_and_sorting)
         result = await self._session.execute(query)
         return [self.model_to_entity(m) for m in result.scalars().all()]
 
     async def count_user_children(
-            self, user_id: UUID, ids: list[UUID] | None = None,
-            search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None
+            self, user_id: UUID,
+            user_filters: UserFilters = UserFilters()
+
     ) -> int:
         child_user = aliased(UserModel, name='child_user')
         query = (
@@ -253,14 +168,7 @@ class UserRepository(IUserRepository):
             .join(UserModel.children.of_type(child_user))
             .where(UserModel.id == user_id)
         )
-        query = apply_user_filters_to_query(
-            query, alias=child_user,
-            ids=ids, search=search,
-            gender=gender, roles=roles,
-            grades=grades, letters=letters,
-            graduation_years=graduation_years,
-            class_names=class_names,
-            lives_in_dormitory=lives_in_dormitory)
+        query = apply_user_filters_to_query(query, child_user, user_filters)
         result = await self._session.execute(query)
         return result.scalar() or 0
 

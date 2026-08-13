@@ -17,7 +17,7 @@ async def create_or_update_admin() -> None:
         user_repository = UserRepository(session)
 
         auth_service = AuthentikService(settings.authentik_url, settings.users_path, settings.sa_auth_admin_app_api_token)
-        user_service = UserService(user_repository, auth_service, None)
+        user_service = UserService(user_repository, auth_service)
         logger.info('Creating admin user')
         try:
             await user_service.check_login_not_occupied_or_raise(settings.admin_login)

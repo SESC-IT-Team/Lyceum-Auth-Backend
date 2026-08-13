@@ -9,7 +9,7 @@ from app.application.services.user_service import UserService
 from app.domain.entities.department_member import DepartmentMember
 from sesc_openfga_sdk.models import Department as OpenFGADepartment, User as OpenFGAUser
 
-from app.domain.enums.department_member_position import DepartmentMemberPosition
+from sesc_auth_sdk.enums import DepartmentMemberPosition
 from logging import getLogger
 
 logger = getLogger(__name__)

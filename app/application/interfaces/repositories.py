@@ -1,9 +1,11 @@
-from sesc_auth_sdk.enums.role import Role
-from sesc_auth_sdk.enums.gender import Gender
+from sesc_auth_sdk.enums import Department, DepartmentMemberPosition
 from uuid import UUID
-
+from app.domain.entities.department_member import DepartmentMember
+from app.domain.entities.departtment_member_filters import DepartmentMemberFilters
+from app.domain.entities.pagination_and_sorting import PaginationAndSorting
 from app.domain.entities.user import User
-from app.domain.enums.sorting_order import SortingOrder
+from app.domain.entities.department_member_filters import UserFilters
+from app.domain.enums.department_member_sortable_field import DepartmentMemberSortableField
 from app.domain.enums.user_sortable_field import UserSortableField
 
 
@@ -14,45 +16,22 @@ class IUserRepository:
     async def update(self, user: User) -> User: ...
     async def delete(self, user_id: UUID) -> bool: ...
     async def get_users(
-            self, ids: list[UUID] | None = None, search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
-            sort_by: str = 'created_at', order: str = 'desc',
-            offset: int = 0, limit: int = 20
+            self,
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            department_member_filters: UserFilters = UserFilters()
     ) -> list[User]: ...
     async def count_users(
-            self, ids: list[UUID] | None = None,
-            search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None
+            self,
+            department_member_filters: UserFilters = UserFilters()
     ) -> int: ...
     async def get_user_parents(
             self, user_id: UUID,
-            ids: list[UUID] | None = None,
-            search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
-            sort_by: str = 'created_at', order: str = 'desc',
-            offset: int = 0, limit: int = 20
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            department_member_filters: UserFilters = UserFilters()
     ) -> list[User]: ...
     async def count_user_parents(
             self, user_id: UUID,
-            ids: list[UUID] | None = None,
-            search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None
+            department_member_filters: UserFilters = UserFilters()
     ) -> int: ...
     async def update_user_parents(
             self, user_id: UUID,
@@ -61,28 +40,37 @@ class IUserRepository:
     ) -> None: ...
     async def get_user_children(
             self, user_id: UUID,
-            ids: list[UUID] | None = None,
-            search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None,
-            sort_by: str = 'created_at', order: str = 'desc',
-            offset: int = 0, limit: int = 20
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            department_member_filters: UserFilters = UserFilters()
     ) -> list[User]: ...
     async def count_user_children(
             self, user_id: UUID,
-            ids: list[UUID] | None = None,
-            search: str | None = None,
-            gender: Gender | None = None, roles: list[Role] | None = None,
-            grades: list[int] | None = None, letters: list[str] | None = None,
-            graduation_years: list[int] | None = None,
-            class_names: list[str] | None = None,
-            lives_in_dormitory: bool | None = None
+            department_member_filters: UserFilters = UserFilters()
     ) -> int: ...
     async def update_user_children(
             self, user_id: UUID,
             ids_to_add: list[UUID],
             ids_to_delete: list[UUID]
+    ) -> None: ...
+
+class IDepartmentRepository:
+    async def get_department_members(
+            self, department: Department,
+            pagination_and_sorting: PaginationAndSorting[DepartmentMemberSortableField],
+            department_member_filters: DepartmentMemberFilters = DepartmentMemberFilters()
+    ) -> list[DepartmentMember]: ...
+    async def count_department_members(
+            self, department: Department,
+            department_member_filters: DepartmentMemberFilters = DepartmentMemberFilters()
+    ) -> list[DepartmentMember]: ...
+    async def get_department_member(
+            self,
+            department: Department,
+            user_id: UUID
+    ) -> DepartmentMember: ...
+    async def update_department_member(
+            self, 
+            department: Department,
+            user_id: UUID, 
+            position: DepartmentMemberPosition
     ) -> None: ...

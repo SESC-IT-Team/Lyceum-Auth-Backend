@@ -3,7 +3,7 @@ from datetime import date, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sesc_auth_sdk.enums import Department, DepartmentMemberRole
+from sesc_auth_sdk.enums import Department, DepartmentMemberPosition
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -25,9 +25,9 @@ if TYPE_CHECKING:
     from app.infrastructure.models.department_member import DepartmentMemberModel
 
 class DepartmentMemerCreator:
-    def __call__(self, department: Department, role: DepartmentMemberRole) -> DepartmentMemberModel:
+    def __call__(self, department: Department, position: DepartmentMemberPosition) -> DepartmentMemberModel:
         from app.infrastructure.models.department_member import DepartmentMemberModel
-        return DepartmentMemberModel(department=department, role=role)
+        return DepartmentMemberModel(department=department, position=position)
 
 class UserModel(Base):
     __tablename__ = "users"
@@ -80,9 +80,9 @@ class UserModel(Base):
         collection_class=attribute_mapped_collection("department"),
     )
 
-    department_roles: AssociationProxy[dict[Department, DepartmentMemberRole]] = association_proxy(
+    department_positions: AssociationProxy[dict[Department, DepartmentMemberPosition]] = association_proxy(
         "departments",
-        "role",
+        "position",
         creator=DepartmentMemerCreator(),
     )
 
