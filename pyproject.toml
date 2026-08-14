@@ -22,8 +22,7 @@ dependencies = [
     "python-multipart>=0.0.17",
     "psycopg2-binary>=2.9.11",
     "slowapi>=0.1.9",
-    "sesc-auth-sdk>=2.0.0",
-    "sesc-openfga-sdk>=0.1.0",
+    "sesc-auth-sdk==2.0.3",
 ]
 
 [tool.hatch.build.targets.wheel]
