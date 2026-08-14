@@ -38,16 +38,9 @@ class Settings(BaseSettings):
 
     root_path: str = '/'
 
-    auth_router_settings: AuthRouterSettings = AuthRouterSettings(_env_file='.env')
-    openfga_settings: OpenFGASettings = OpenFGASettings(_env_file='.env', _env_prefix='openfga_')
-    openfga_m2m_settings: M2MSettings = M2MSettings(_env_file='.env', _env_prefix='openfga_', authentik_url='...')
-
     token_validation_settings: TokenValidationSettings = TokenValidationSettings(_env_file='.env')
 
-    sa_auth_admin_app_api_token: str    
-
-    def model_post_init(self, context: Any) -> None:
-        self.openfga_m2m_settings.authentik_url = self.authentik_url
+    sa_auth_admin_app_api_token: str
 
 settings = Settings()
 

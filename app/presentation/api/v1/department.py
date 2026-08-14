@@ -27,7 +27,7 @@ async def get_department_members(
         department_name: Department,
         pagination_and_sorting_params: PaginationAndSortingQueryParams[DepartmentMemberSortableField] = Depends(),
         department_member_filtering_params: DepartmentMemberFilteringQueryQueryParams = Depends(),
-        _ = Depends(Auth([Scope.auth_users_read])),
+        _ = Depends(Auth([Scope.auth_users_read]).restrict_roles_and_return_user([Role.admin])),
         department_service: DepartmentService = Depends(get_department_service)
 ) -> DepartmentMemberListResponse:
     return DepartmentMemberListResponse(members=[DepartmentMemberResponse(**member.model_dump()) for member in

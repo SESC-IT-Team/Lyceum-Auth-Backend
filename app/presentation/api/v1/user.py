@@ -102,7 +102,7 @@ async def update_user(
     user_id: UUID,
     body: UserInfoUpdate,
     user_service: UserService = Depends(get_user_service),
-    _: User = Depends(Auth([Scope.auth_users_update])),
+    _: User = Depends(Auth([Scope.auth_users_update]).restrict_roles_and_return_user([Role.admin])),
 ) -> UserResponse:
     updated = await user_service.update_user(
         user_id,
@@ -188,7 +188,7 @@ async def get_user_children(
     )
 
 @router.patch('/{user_id}/children', status_code=status.HTTP_204_NO_CONTENT)
-async def update_user_parents(
+async def update_user_children(
         user_id: UUID,
         body: UpdateUserParentsOrChildrenRequest,
         user_service: UserService = Depends(get_user_service),
