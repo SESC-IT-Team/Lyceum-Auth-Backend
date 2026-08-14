@@ -12,12 +12,7 @@ from app.domain.entities.user import User
 from sesc_auth_sdk.enums.gender import Gender
 from sesc_auth_sdk.enums.role import Role
 from app.application.interfaces.repositories import IUserRepository
-from app.domain.enums.sorting_order import SortingOrder
 from app.domain.enums.user_sortable_field import UserSortableField
-from sesc_openfga_sdk.lyceum_openfga_service import LyceumOpenFGAService
-
-from sesc_openfga_sdk.models import Student as OpenFGAStudent, User as OpenFGAUser
-
 logger = logging.getLogger(__name__)
 
 

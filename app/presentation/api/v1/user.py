@@ -5,7 +5,7 @@ from app.domain.enums.user_sortable_field import UserSortableField
 from app.presentation.dependencies import get_user_service
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, status
 
 from app.domain.entities.user import User
 from app.application.services.user_service import UserService

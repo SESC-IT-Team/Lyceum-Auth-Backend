@@ -7,7 +7,7 @@ from sesc_auth_sdk.services.jwks_manager import JWKSManager
 from app.application.services.authentik_service import AuthentikService
 from app.application.services.department_service import DepartmentService
 from app.config import settings
-from fastapi import Depends, Query, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User

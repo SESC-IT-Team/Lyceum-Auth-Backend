@@ -1,12 +1,10 @@
 from uuid import UUID
 import json
 
-from sesc_auth_sdk.services.m2m_auth_service import M2MAuthService
 from sesc_auth_sdk.services.requests_service import RequestsService
 from sqlalchemy.dialects.postgresql import Any
 
 from app.domain.entities.authentik_user import AuthentikUser
-from app.domain.entities.user import User
 import logging
 
 logger = logging.getLogger(__name__)

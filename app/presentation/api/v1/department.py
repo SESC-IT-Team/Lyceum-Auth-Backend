@@ -10,8 +10,6 @@ from sesc_auth_sdk.schemas.token import AccessTokenPayload
 from fastapi import status
 
 from app.application.services.department_service import DepartmentService
-from app.domain.entities.departtment_member_filters import DepartmentMemberFilters
-from app.domain.entities.pagination_and_sorting import PaginationAndSorting
 from app.domain.enums.department_member_sortable_field import DepartmentMemberSortableField
 from app.domain.enums.user_sortable_field import UserSortableField
 from app.presentation.dependencies import get_department_service, Auth, require_department_admin

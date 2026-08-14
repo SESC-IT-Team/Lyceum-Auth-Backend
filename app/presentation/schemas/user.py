@@ -9,8 +9,6 @@ from sesc_auth_sdk.enums.gender import Gender
 from sesc_auth_sdk.enums.role import Role
 
 from app.domain.entities.user_filters import UserFilters
-from app.domain.enums.sorting_order import SortingOrder
-from app.domain.enums.user_sortable_field import UserSortableField
 
 
 class UserCreate(BaseModel):

@@ -7,7 +7,6 @@ from fastapi import status
 
 from app.application.services.user_service import UserService
 from app.domain.entities.department_member import DepartmentMember
-from sesc_openfga_sdk.models import Department as OpenFGADepartment, User as OpenFGAUser
 
 from sesc_auth_sdk.enums import DepartmentMemberPosition
 from logging import getLogger

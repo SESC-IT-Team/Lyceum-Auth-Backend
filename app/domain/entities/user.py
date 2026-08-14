@@ -1,9 +1,9 @@
 from datetime import date
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, computed_field
 
 from datetime import datetime
-from uuid import UUID, uuid4
+from uuid import UUID
 from sesc_auth_sdk.enums.gender import Gender
 from sesc_auth_sdk.enums.role import Role
 

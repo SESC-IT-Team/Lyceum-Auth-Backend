@@ -1,5 +1,3 @@
-from enum import StrEnum
-
 from app.domain.enums.department_member_sortable_field import DepartmentMemberSortableField
 from app.domain.enums.user_sortable_field import UserSortableField
 from app.domain.entities.pagination_and_sorting import PaginationAndSorting

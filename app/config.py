@@ -2,10 +2,8 @@ from typing import Literal, Any
 import logging
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pathlib import Path
 
-from sesc_auth_sdk.settings import AuthRouterSettings, M2MSettings, TokenValidationSettings
-from sesc_openfga_sdk.settings import OpenFGASettings
+from sesc_auth_sdk.settings import TokenValidationSettings
 
 logger = logging.getLogger(__name__)
 
