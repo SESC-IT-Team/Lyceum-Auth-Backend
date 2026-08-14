@@ -1,15 +1,19 @@
+from fastapi import Path
+from sesc_auth_sdk.enums import Department, DepartmentMemberPosition
 from sesc_auth_sdk.dependencies import LyceumAuth, create_jwks_manager_dependency
+from sesc_auth_sdk.schemas.token import AccessTokenPayload
 from sesc_auth_sdk.services.jwks_manager import JWKSManager
 
 from app.application.services.authentik_service import AuthentikService
 from app.application.services.department_service import DepartmentService
 from app.config import settings
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Query, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.entities.user import User
 from app.application.services.user_service import UserService
 from app.infrastructure.database import get_db
+from app.infrastructure.repositories.department_repository import DepartmentRepository
 from app.infrastructure.repositories.user_repository import UserRepository
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -44,5 +48,18 @@ class Auth(LyceumAuth):
         return user
 
 
-def get_department_service(user_service: UserService = Depends(get_user_service)):
-    return DepartmentService(openfga_service, user_service)
+def get_department_service(db: AsyncSession = Depends(get_db), user_service: UserService = Depends(get_user_service)):
+    return DepartmentService(user_service, DepartmentRepository(db))
+
+
+async def require_department_admin(
+        department_name: Department = Path(),
+        payload: AccessTokenPayload = Depends(Auth()),
+        department_service: DepartmentService = Depends(get_department_service)
+) -> None:
+    try:
+        pos = (await department_service.get_department_member(department_name, payload.sub)).position
+    except HTTPException:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not member of this department.")
+    if pos != DepartmentMemberPosition.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User are not admin of this department.")

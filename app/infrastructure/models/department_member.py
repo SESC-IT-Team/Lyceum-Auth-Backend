@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sesc_auth_sdk.enums import DepartmentMemberPosition, Department
-from sqlalchemy import ForeignKey, Enum, UniqueConstraint
+from sqlalchemy import ForeignKey, Enum, UniqueConstraint, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
@@ -31,6 +32,12 @@ class DepartmentMemberModel(Base):
     position: Mapped[DepartmentMemberPosition] = mapped_column(
         Enum(DepartmentMemberPosition),
         nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
     user: Mapped[UserModel] = relationship(back_populates="departments")

@@ -1,8 +1,8 @@
+from app.application.interfaces.repositories import IDepartmentRepository
 from fastapi import HTTPException
 from uuid import UUID
 
 from sesc_auth_sdk.enums.department import Department
-from sesc_openfga_sdk.lyceum_openfga_service import LyceumOpenFGAService
 from fastapi import status
 
 from app.application.services.user_service import UserService
@@ -12,45 +12,68 @@ from sesc_openfga_sdk.models import Department as OpenFGADepartment, User as Ope
 from sesc_auth_sdk.enums import DepartmentMemberPosition
 from logging import getLogger
 
+from app.domain.entities.departtment_member_filters import DepartmentMemberFilters
+from app.domain.entities.pagination_and_sorting import PaginationAndSorting
+from app.domain.enums.department_member_sortable_field import DepartmentMemberSortableField
+
 logger = getLogger(__name__)
 
 class DepartmentService:
-    def __init__(self, openfga_service: LyceumOpenFGAService,
-                 user_service: UserService):
-        self._openfga_service = openfga_service
+    def __init__(
+            self,
+            user_service: UserService,
+            repo: IDepartmentRepository
+    ) -> None:
+        self._repo = repo
         self._user_service = user_service
 
-    async def get_department_members(self, department: Department) -> list[DepartmentMember]:
-        openfga_admins = await self._openfga_service.list_subjects(OpenFGADepartment(department.value).admin(), OpenFGAUser)
-        # openfga_workers = await self._openfga_service.list_subjects(OpenFGADepartment(str(department)).wor(), OpenFGAUser)
-        # admins = await self._user_service.list_users(ids=list(map(lambda x: UUID(x.id), openfga_workers)))
-        return [DepartmentMember(user_id=UUID(user.id), position=DepartmentMemberPosition.admin, department=department) for user in openfga_admins]
+    async def get_department_members(
+            self, department: Department,
+            pagination_and_sorting: PaginationAndSorting[DepartmentMemberSortableField],
+            department_member_filters: DepartmentMemberFilters
+    ) -> list[DepartmentMember]:
+        return await self._repo.get_department_members(department, pagination_and_sorting, department_member_filters)
 
-    async def get_department_member(self, department: Department, user_id: UUID) -> DepartmentMember:
-        await self._user_service.check_user_exists_by_id_or_raise(user_id)
-        rels = await self._openfga_service.list_relations(OpenFGADepartment(department.value), OpenFGAUser(str(user_id)), relations=list(DepartmentMemberPosition),
-                                                          return_type=DepartmentMemberPosition)
-        if not rels:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'User provided in request in not a member of the "{department.value}" department')
-        if len(rels) > 1:
-            logger.error(f'User have 2 positions in 1 department user_id={user_id} department={department}')
-            raise HTTPException(status_code=500, detail='Internal server error')
-        return DepartmentMember(user_id=user_id, position=rels[0], department=department)
+    async def count_department_members(
+            self, department: Department,
+            department_member_filters: DepartmentMemberFilters
+    ) -> int:
+        return await self._repo.count_department_members(department, department_member_filters)
 
-    async def update_department_member(self, department: Department, user_id: UUID, position: DepartmentMemberPosition):
+    async def get_department_member(
+            self,
+            department: Department,
+            user_id: UUID
+    ) -> DepartmentMember:
         await self._user_service.check_user_exists_by_id_or_raise(user_id)
-        rels = await self._openfga_service.list_relations(OpenFGADepartment(department.value), OpenFGAUser(str(user_id)), relations=list(DepartmentMemberPosition),
-                                                          return_type=DepartmentMemberPosition)
-        if len(rels) > 1:
-            logger.error(f'User have 2 positions in 1 department user_id={user_id} department={department}')
-            raise HTTPException(status_code=500, detail='Internal server error')
-        if rels and rels[0] == position:
-            return
-        await self._openfga_service.update_relations(writes=[OpenFGADepartment(department.value).__getattribute__(position.value)(subject=OpenFGAUser(str(user_id)))],
-                                                     deletes=[OpenFGADepartment(department.value).__getattribute__(rels[0].value)(subject=OpenFGAUser(str(user_id)))] if rels else [])
+        res = await self._repo.get_department_member(department, user_id)
+        if res is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Member not found')
+        return res
+
+    async def check_department_member_exists_or_raise(
+            self,
+            department: Department,
+            user_id: UUID
+    ) -> None:
+        await self._user_service.check_user_exists_by_id_or_raise(user_id)
+        if not await self._repo.get_department_member(department, user_id):
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Member not found')
+
+    async def update_department_member(
+            self,
+            department: Department,
+            user_id: UUID,
+            position: DepartmentMemberPosition
+    ) -> DepartmentMember:
+        await self._user_service.check_user_exists_by_id_or_raise(user_id)
+        if await self._repo.get_department_member(department, user_id):
+            return await self._repo.update_department_member(department, user_id, position)
+        return await self._repo.add_department_member(department, user_id, position)
+
 
     async def delete_department_member(self, department: Department, user_id: UUID):
         await self._user_service.check_user_exists_by_id_or_raise(user_id)
-        pos = (await self.get_department_member(department, user_id)).position
-        await self._openfga_service.update_relations(deletes=[OpenFGADepartment(department.value).__getattribute__(pos.value)(subject=OpenFGAUser(str(user_id)))])
+        await self.check_department_member_exists_or_raise(department, user_id)
+        await self._repo.delete_department_member(department, user_id)
 

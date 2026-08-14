@@ -15,3 +15,4 @@ class PaginationAndSortingQueryParams[T: StrEnum](BaseModel):
 
     def to_entity(self) -> PaginationAndSorting[T]:
         return PaginationAndSorting(**self.model_dump())
+    

@@ -73,7 +73,7 @@ class UserListResponse(BaseModel):
     offset: int
     limit: int
 
-class UserFilteringParams(BaseModel):
+class UserFilteringQueryParams(BaseModel):
     ids: list[UUID] | None = Field(default=Query(default=None, description='Filter users by IDs'))
     search: str | None = Field(default=Query(default=None, description='Filter users by login|names'))
     gender: Gender | None = Field(default=Query(default=None, description='Filter users by gender'))

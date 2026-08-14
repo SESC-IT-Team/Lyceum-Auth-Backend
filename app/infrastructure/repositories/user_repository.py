@@ -85,7 +85,7 @@ class UserRepository(IUserRepository):
     ) -> list[User]:
         query = select(UserModel)
         query = apply_user_filters_to_query(query, user_filters=user_filters)
-        query = apply_pagination_and_sorting(query, UserModel, pagination_and_sorting)
+        query = apply_pagination_and_sorting(query, pagination_and_sorting)
         result = await self._session.execute(query)
         return [self.model_to_entity(m) for m in result.scalars().all()]
 
@@ -110,7 +110,7 @@ class UserRepository(IUserRepository):
             .where(UserModel.id == user_id)
         )
         query = apply_user_filters_to_query(query, parent_user, user_filters)
-        query = apply_pagination_and_sorting(query, parent_user, pagination_and_sorting)
+        query = apply_pagination_and_sorting(query, pagination_and_sorting, parent_user)
         result = await self._session.execute(query)
         return [self.model_to_entity(m) for m in result.scalars().all()]
 
@@ -153,14 +153,13 @@ class UserRepository(IUserRepository):
             .where(UserModel.id == user_id)
         )
         query = apply_user_filters_to_query(query, child_user, user_filters)
-        query = apply_pagination_and_sorting(query, child_user, pagination_and_sorting)
+        query = apply_pagination_and_sorting(query, pagination_and_sorting, child_user)
         result = await self._session.execute(query)
         return [self.model_to_entity(m) for m in result.scalars().all()]
 
     async def count_user_children(
             self, user_id: UUID,
             user_filters: UserFilters = UserFilters()
-
     ) -> int:
         child_user = aliased(UserModel, name='child_user')
         query = (
@@ -184,3 +183,4 @@ class UserRepository(IUserRepository):
         if ids_to_add:
             self._session.add_all([ParentChildModel(parent_id=user_id, child_id=c_id) for c_id in ids_to_add])
             await self._session.flush()
+

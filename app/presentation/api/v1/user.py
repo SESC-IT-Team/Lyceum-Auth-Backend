@@ -11,7 +11,7 @@ from app.domain.entities.user import User
 from app.application.services.user_service import UserService
 from app.presentation.schemas.pagination_and_sorting import PaginationAndSortingQueryParams
 from app.presentation.schemas.user import UserCreate, UserInfoUpdate, UserResponse, UserListResponse, \
-    UserFilteringParams, UpdateUserParentsOrChildrenRequest, UserSortingParams, \
+    UserFilteringQueryParams, UpdateUserParentsOrChildrenRequest, \
     UserPasswordUpdate
 from app.presentation.dependencies import Auth
 from sesc_auth_sdk.schemas.token import AccessTokenPayload
@@ -24,33 +24,44 @@ def get_me(user: User = Depends(Auth([Scope.profile]).return_user)):
     return UserResponse.from_entity(user)
 
 @router.get("/me/children")
-async def get_my_children(token_payload: AccessTokenPayload = Depends(Auth([Scope.auth_children_read])),
-                          user_service: UserService = Depends(get_user_service)):
-    return ParentOrChildListResponse(users=[UserResponse.from_entity(child) for child in await user_service.get_children_by_parent_id(token_payload.sub)])
+async def get_my_children(
+        pagination_and_sorting_query_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
+        filtering_query_params: UserFilteringQueryParams = Depends(),
+        token_payload: AccessTokenPayload = Depends(Auth([Scope.auth_children_read])),
+        user_service: UserService = Depends(get_user_service)
+) -> UserListResponse:
+    items = await user_service.get_children_by_parent_id(token_payload.sub,
+                                                         pagination_and_sorting_query_params.to_entity(),
+                                                         filtering_query_params.to_entity())
+    total = await user_service.count_children_by_parent_id(token_payload.sub,
+                                                           filtering_query_params.to_entity())
+    return UserListResponse(
+        users=[UserResponse.from_entity(e) for e in items],
+        total=total,
+        offset=pagination_and_sorting_query_params.offset,
+        limit=pagination_and_sorting_query_params.limit,
+    )
 
 @router.get("/me/children/{child_id}")
-async def get_my_children(child_id: UUID, token_payload: AccessTokenPayload = Depends(Auth([Scope.auth_children_read])),
-                          user_service: UserService = Depends(get_user_service)):
+async def get_my_child(child_id: UUID, token_payload: AccessTokenPayload = Depends(Auth([Scope.auth_children_read])),
+                       user_service: UserService = Depends(get_user_service)):
     return UserResponse.from_entity(await user_service.get_child_of_parent(child_id, token_payload.sub))
 
 @router.get("")
 async def list_users(
-        pagination_and_sorting_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
-        filtering_params: UserFilteringParams = Depends(),
+        pagination_and_sorting_query_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
+        filtering_query_params: UserFilteringQueryParams = Depends(),
         user_service: UserService = Depends(get_user_service),
         _: User = Depends(Auth([Scope.auth_users_read]).restrict_roles_and_return_user([Role.admin])),
 ) -> UserListResponse:
-    if limit <= 0 or limit > 100:
-        limit = 20
-    if offset < 0:
-        offset = 0
-    items = await user_service.list_users(**filtering_params.model_dump(), **sorting_params.model_dump(), offset=offset, limit=limit)
-    total = await user_service.count_users(**filtering_params.model_dump())
+    items = await user_service.list_users(pagination_and_sorting_query_params.to_entity(),
+                                          filtering_query_params.to_entity())
+    total = await user_service.count_users(filtering_query_params.to_entity())
     return UserListResponse(
         users=[UserResponse.from_entity(e) for e in items],
         total=total,
-        offset=offset,
-        limit=limit,
+        offset=pagination_and_sorting_query_params.offset,
+        limit=pagination_and_sorting_query_params.limit,
     )
 
 
@@ -130,19 +141,21 @@ async def delete_user(
 @router.get('/{user_id}/parents')
 async def get_user_parents(
         user_id: UUID,
-        pagination_and_sorting_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
-        filtering_params: UserFilteringParams = Depends(),
+        pagination_and_sorting_query_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
+        filtering_query_params: UserFilteringQueryParams = Depends(),
         user_service: UserService = Depends(get_user_service),
         _: User = Depends(Auth([Scope.auth_users_read]).restrict_roles_and_return_user([Role.admin]))
 ) -> UserListResponse:
+    items = await user_service.get_parents_by_child_id(user_id,
+                                                       pagination_and_sorting_query_params.to_entity(),
+                                                       filtering_query_params.to_entity())
+    total = await user_service.count_parents_by_child_id(user_id,
+                                                         filtering_query_params.to_entity())
     return UserListResponse(
-        users=[UserResponse.from_entity(user)
-               for user in await user_service.get_parents_by_child_id(user_id, **filtering_params.model_dump(),
-                                                                      **sorting_params.model_dump(),
-                                                                      offset=offset, limit=limit)],
-        total=await user_service.count_parents_by_child_id(user_id, **filtering_params.model_dump()),
-        offset=offset,
-        limit=limit
+        users=[UserResponse.from_entity(e) for e in items],
+        total=total,
+        offset=pagination_and_sorting_query_params.offset,
+        limit=pagination_and_sorting_query_params.limit,
     )
 
 @router.patch('/{user_id}/parents', status_code=status.HTTP_204_NO_CONTENT)
@@ -157,19 +170,21 @@ async def update_user_parents(
 @router.get('/{user_id}/children')
 async def get_user_children(
         user_id: UUID,
-        pagination_and_soring_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
-        filtering_params: UserFilteringParams = Depends(),
+        pagination_and_sorting_query_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
+        filtering_query_params: UserFilteringQueryParams = Depends(),
         user_service: UserService = Depends(get_user_service),
         _: User = Depends(Auth([Scope.auth_users_read]).restrict_roles_and_return_user([Role.admin]))
 ) -> UserListResponse:
+    items = await user_service.get_children_by_parent_id(user_id,
+                                                         pagination_and_sorting_query_params.to_entity(),
+                                                         filtering_query_params.to_entity())
+    total = await user_service.count_children_by_parent_id(user_id,
+                                                           filtering_query_params.to_entity())
     return UserListResponse(
-        users=[UserResponse.from_entity(user)
-               for user in await user_service.get_children_by_parent_id(user_id, **filtering_params.model_dump(),
-                                                                        **sorting_params.model_dump(),
-                                                                        offset=offset, limit=limit)],
-        total=await user_service.count_children_by_parent_id(user_id, **filtering_params.model_dump()),
-        offset=offset,
-        limit=limit
+        users=[UserResponse.from_entity(e) for e in items],
+        total=total,
+        offset=pagination_and_sorting_query_params.offset,
+        limit=pagination_and_sorting_query_params.limit,
     )
 
 @router.patch('/{user_id}/children', status_code=status.HTTP_204_NO_CONTENT)
@@ -181,8 +196,3 @@ async def update_user_parents(
 ) -> None:
     await user_service.update_children_by_parent_id(user_id, body.ids_to_add, body.ids_to_delete)
 
-@router.get("/")
-async def test_token_payload(filters: UserFilteringParams = Depends(),
-                             sorting: UserSortingParams = Depends(),
-                             pagination: PaginationAndSortingQueryParams[UserSortableField] = Depends()):
-    print(filters, sorting, pagination)

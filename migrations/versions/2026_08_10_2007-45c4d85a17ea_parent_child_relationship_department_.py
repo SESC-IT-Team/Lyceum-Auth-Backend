@@ -40,6 +40,8 @@ def upgrade() -> None:
     sa.Column('user_id', sa.UUID(), nullable=False),
     sa.Column('department', department_enum, nullable=False),
     sa.Column('position', sa.Enum('admin', 'worker', name='departmentmemberposition'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('user_id', 'department', name='uq_user_department')
