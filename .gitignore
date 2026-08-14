@@ -17,3 +17,5 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .mypy_cache/
+__pycache__/
+*.py[cod]
