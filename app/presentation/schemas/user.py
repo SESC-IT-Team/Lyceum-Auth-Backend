@@ -1,16 +1,14 @@
 from datetime import date
-from fastapi import Query
 from datetime import datetime
 from uuid import UUID
+from fastapi import Query
 
-from pydantic import BaseModel, field_validator
-
-from app.application.services.user_permissions_service import UserPermissionsService
+from pydantic import BaseModel, Field
 from app.domain.entities.user import User
-from app.domain.enums.departments import Department
-from app.domain.enums.gender import Gender
-from app.domain.enums.permission import PermissionType
-from app.domain.enums.role import Role
+from sesc_auth_sdk.enums.gender import Gender
+from sesc_auth_sdk.enums.role import Role
+
+from app.domain.entities.user_filters import UserFilters
 from app.domain.enums.sorting_order import SortingOrder
 from app.domain.enums.user_sortable_field import UserSortableField
 
@@ -19,30 +17,27 @@ class UserCreate(BaseModel):
     last_name: str
     first_name: str
     login: str
-    password: str
     roles: list[Role]
     gender: Gender
+    lives_in_dormitory: bool = False
     middle_name: str | None = None
     grade: int | None = None
     letter: str | None = None
     graduation_year: int | None = None
     birthday: date | None = None
-    department: Department | None = None
 
 
-class UserUpdate(BaseModel):
+class UserInfoUpdate(BaseModel):
     last_name: str | None = None
     first_name: str | None = None
     middle_name: str | None = None
     roles: list[Role] | None = None
     gender: Gender | None = None
+    lives_in_dormitory: bool | None = None
     grade: int | None = None
     letter: str | None = None
-    password: str | None = None
     graduation_year: int | None = None
-    permissions: list[PermissionType] | None = None
     birthday: date | None = None
-    department: Department | None = None
 
 
 class UserResponse(BaseModel):
@@ -53,15 +48,14 @@ class UserResponse(BaseModel):
     full_name: str
     gender: Gender
     roles: list[Role]
-    permissions: list[PermissionType]
-    department: Department | None
-    gender: Gender
+    lives_in_dormitory: bool
     birthday: date | None
     grade: int | None
     letter: str | None
     class_name: str | None
     graduation_year: int | None
     login: str
+
     created_at: datetime | None
     updated_at: datetime | None
 
@@ -74,28 +68,28 @@ class UserResponse(BaseModel):
 
 
 class UserListResponse(BaseModel):
-    items: list[UserResponse]
+    users: list[UserResponse]
     total: int
     offset: int
     limit: int
 
+class UserFilteringQueryParams(BaseModel):
+    ids: list[UUID] | None = Field(default=Query(default=None, description='Filter users by IDs'))
+    search: str | None = Field(default=Query(default=None, description='Filter users by login|names'))
+    gender: Gender | None = Field(default=Query(default=None, description='Filter users by gender'))
+    roles: list[Role] | None = Field(default=Query(default=None, description='Filter users by roles'))
+    grades: list[int] | None = Field(default=Query(default=None, description='Filter users by grades'))
+    letters: list[str] | None = Field(default=Query(default=None, description='Filter users by letters'))
+    graduation_years: list[int] | None = Field(default=Query(default=None, description='Filter users by graduation_years'))
+    class_names: list[str] | None = Field(default=Query(default=None, description='Filter users by class_names'))
+    lives_in_dormitory: bool | None = Field(default=Query(default=None, description='Filter users by lives_in_dormitory attr'))
 
-class UserFilteringParams(BaseModel):
-    login: str | None = None
-    last_name: str | None = None
-    first_name: str | None = None
-    first_name: str | None = None
-    middle_name: str | None = None
-    last_name: str | None = None
-    full_name: str | None = None
-    gender: Gender | None = None
-    roles: list[Role] | None = None
-    permissions: list[PermissionType] | None = None
-    grades: list[int] | None = None
-    letters: list[str] | None = None
-    graduation_years: list[int] | None = None
-    class_names: list[str] | None = None
+    def to_entity(self) -> UserFilters:
+        return UserFilters(**self.model_dump())
 
-class UserSortingParams(BaseModel):
-    sort_by: UserSortableField = UserSortableField.created_at
-    order: SortingOrder = SortingOrder.descending
+class UpdateUserParentsOrChildrenRequest(BaseModel):
+    ids_to_add: list[UUID] | None = None
+    ids_to_delete: list[UUID] | None = None
+
+class UserPasswordUpdate(BaseModel):
+    password: str

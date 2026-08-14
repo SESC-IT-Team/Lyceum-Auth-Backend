@@ -7,7 +7,7 @@ name = "auth"
 version = "0.1.0"
 description = "Auth microservice"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
@@ -22,6 +22,8 @@ dependencies = [
     "python-multipart>=0.0.17",
     "psycopg2-binary>=2.9.11",
     "slowapi>=0.1.9",
+    "sesc-auth-sdk>=2.0.0",
+    "sesc-openfga-sdk>=0.1.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -33,3 +35,7 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
 ]
+
+[tool.uv.sources]
+sesc-auth-sdk = { git = "https://github.com/SESC-IT-Team/Lyceum-Auth-SDK.git" }
+sesc-openfga-sdk = { git = "https://github.com/SESC-IT-Team/Lyceum-OpenFGA-SDK.git" }

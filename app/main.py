@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.presentation.api.v1 import auth, users, permissions_presets
+from app.presentation.api import router as api_router
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from app.presentation.dependencies import limiter
@@ -18,6 +18,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Auth API", lifespan=lifespan, root_path=settings.root_path)
 app.state.limiter = limiter
 
+
 # Настройка CORS – разрешаем фронтенду отправлять куки
 app.add_middleware(
     CORSMiddleware,
@@ -27,13 +28,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router, prefix="/api/v1")
-app.include_router(users.router, prefix="/api/v1")
-app.include_router(permissions_presets.router, prefix="/api/v1")
+app.include_router(api_router, prefix="/api")
 
 # pyrefly: ignore [bad-argument-type]
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-@app.get("/health")
+@app.get("/health", tags=["Health"])
 async def health():
     return {"status": "ok"}

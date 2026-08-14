@@ -1,47 +1,51 @@
 import asyncio
 
+from sesc_auth_sdk.enums.gender import Gender
+from sesc_auth_sdk.enums.role import Role
+
+from app.application.services.authentik_service import AuthentikService
+from app.application.services.user_service import UserService
 from app.config import settings
-from app.domain.enums.gender import Gender
-from app.domain.enums.permission import ALL_PERMISSIONS
-from app.domain.enums.role import Role
 from app.infrastructure.database import async_session_factory
 from app.infrastructure.repositories.user_repository import UserRepository
-from app.application.services.user_service import UserService
-from app.application.services.auth_service import AuthService
-from app.infrastructure.repositories.refresh_token_repository import RefreshTokenRepository
+import logging
 
+logger = logging.getLogger(__name__)
 
 async def create_or_update_admin() -> None:
     async with async_session_factory() as session:
         user_repository = UserRepository(session)
-        refresh_token_repository = RefreshTokenRepository(session)
-        auth_service = AuthService(user_repository, refresh_token_repository)
+
+        auth_service = AuthentikService(settings.authentik_url, settings.users_path, settings.sa_auth_admin_app_api_token)
         user_service = UserService(user_repository, auth_service)
-
-        existing_user = await user_service.get_by_login(settings.admin_login)
-        if existing_user is not None:
-            print(f"Admin user already exists (login={settings.admin_login})")
-            if set(existing_user.permissions) == ALL_PERMISSIONS:
-                print(f"All permissions already granted to admin user")
-                return
-            existing_user.permissions = list(ALL_PERMISSIONS)
-            await user_repository.update(existing_user)
-            await session.commit()
-            print('All permissions granted')
+        logger.info('Creating admin user')
+        try:
+            await user_service.check_login_not_occupied_or_raise(settings.admin_login)
+        except Exception:
+            logger.info(f"Admin user already exists (login={settings.admin_login})")
             return
-
-        password_hash = auth_service.hash_password(settings.admin_password)
-        await user_service.create(
+        user = await user_service.create(
             last_name="Admin",
             first_name="Admin",
             login=settings.admin_login,
-            password_hash=password_hash,
             roles=[Role.admin,],
             gender=Gender.male,
-            permissions=[*ALL_PERMISSIONS]
+            lives_in_dormitory=False
         )
+        logger.info(f"Admin user created: {settings.admin_login} id={user.id} pk={user.id}")
+        try:
+            await user_service.update_password(user.id, settings.admin_password)
+            logger.info(f"Admin user password set {settings.admin_login} id={user.id} pk={user.id}")
+        except Exception:
+            logger.error('Failed to set admin password')
+            logger.info('Rolling back authentik admin creation')
+            try:
+                await auth_service.delete_user(user.pk)
+                logger.info('Authentik admin user creation rollback successful')
+            except Exception:
+                logger.error('Failed to roll back authentik admin creation')
+            raise
         await session.commit()
-        print(f"Admin user created (login={settings.admin_login}, password=***)")
 
 
 if __name__ == "__main__":

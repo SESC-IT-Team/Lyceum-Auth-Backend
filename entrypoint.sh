@@ -1,11 +1,10 @@
 #!/bin/bash
 set -e
-
 echo "Running database migrations..."
 uv run alembic upgrade head
 if [ $? -ne 0 ]; then
-    echo "Migration failed. Exiting."
-    exit 1
+  echo "Migration failed. Exiting."
+  exit 1
 fi
 echo "Migrations completed successfully."
 

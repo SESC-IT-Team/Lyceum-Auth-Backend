@@ -1,7 +1,9 @@
-from enum import Enum
+from enum import StrEnum
+
+from app.domain.enums.department_member_sortable_field import DepartmentMemberSortableField
 
 
-class UserSortableField(str, Enum):
+class UserSortableField(StrEnum):
     first_name = "first_name"
     middle_name = "middle_name"
     last_name = "last_name"
@@ -12,6 +14,9 @@ class UserSortableField(str, Enum):
     graduation_year = "graduation_year"
     login = "login"
     gender = "gender"
-
+    lives_in_dormitory = "lives_in_dormitory"
     created_at = "created_at"
     updated_at = "updated_at"
+
+    def to_department_member_sortable_field(self) -> DepartmentMemberSortableField:
+        return DepartmentMemberSortableField(f'user.{self.value}')

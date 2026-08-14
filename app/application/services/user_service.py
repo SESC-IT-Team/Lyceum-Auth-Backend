@@ -1,18 +1,22 @@
+from app.domain.entities.user_filters import UserFilters
+from app.domain.entities.pagination_and_sorting import PaginationAndSorting
+from copy import deepcopy
 from datetime import date
-from datetime import datetime
 from uuid import UUID, uuid4
 import logging
 
-from app.application.services.auth_service import AuthService
-from app.application.services.user_permissions_service import UserPermissionsService
+from fastapi import HTTPException, status
+
+from app.application.services.authentik_service import AuthentikService
 from app.domain.entities.user import User
-from app.domain.enums.departments import Department
-from app.domain.enums.gender import Gender
-from app.domain.enums.permission import PermissionType
-from app.domain.enums.role import Role
+from sesc_auth_sdk.enums.gender import Gender
+from sesc_auth_sdk.enums.role import Role
 from app.application.interfaces.repositories import IUserRepository
-from app.application.services.key_creator_rotor import KeyRotationManager, RotationJWT
-from app.presentation.schemas.user import UserFilteringParams, UserSortingParams
+from app.domain.enums.sorting_order import SortingOrder
+from app.domain.enums.user_sortable_field import UserSortableField
+from sesc_openfga_sdk.lyceum_openfga_service import LyceumOpenFGAService
+
+from sesc_openfga_sdk.models import Student as OpenFGAStudent, User as OpenFGAUser
 
 logger = logging.getLogger(__name__)
 
@@ -21,56 +25,76 @@ class UserService:
     def __init__(
         self, 
         user_repository: IUserRepository,
-        auth_service: AuthService,
-        key_manager: KeyRotationManager | None = None,
+        authentik_service: AuthentikService
     ):
         self._repo = user_repository
-        self._key_manager = key_manager  # Только для чтения/отладки
-        self._auth_service = auth_service
+        self._auth_service = authentik_service
 
-    async def get_by_id(self, user_id: UUID) -> User | None:
-        return await self._repo.get_by_id(user_id)
+    async def check_user_exists_by_id_or_raise(self, user_id: UUID) -> None:
+        user = await self._repo.get_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
 
-    async def get_by_login(self, login: str) -> User | None:
-        return await self._repo.get_by_login(login)
+    async def check_login_not_occupied_or_raise(self, login: str) -> None:
+        user = await self._repo.get_by_login(login)
+        if user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Login already occupied",
+            )
+
+    async def get_user_by_id(self, user_id: UUID) -> User:
+        user = await self._repo.get_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+        return user
 
     async def create(
         self,
         last_name: str,
         first_name: str,
         login: str,
-        password_hash: str,
         roles: list[Role],
         gender: Gender,
+        lives_in_dormitory: bool,
         birthday: date | None = None,
         middle_name: str | None = None,
         grade: int | None = None,
         letter: str | None = None,
-        graduation_year: int | None = None,
-        permissions: list[PermissionType] | None = None,
-        department: Department | None = None,
+        graduation_year: int | None = None
     ) -> User:
-        if not permissions:
-            permissions = []
         user = User(
             id=uuid4(),
+            pk=0,
             last_name=last_name,
             first_name=first_name,
             middle_name=middle_name,
             login=login,
-            password_hash=password_hash,
             roles=roles,
             birthday=birthday,
             gender=gender,
             grade=grade,
             letter=letter,
             graduation_year=graduation_year,
-            permissions=permissions,
-            department=department
+            lives_in_dormitory=lives_in_dormitory
         )
-        print('service', user.model_dump())
-        created = await self._repo.create(user)
-        logger.info(f"Пользователь создан: {created.id}, login={login}")
+        await self.check_login_not_occupied_or_raise(login)
+        pk, created_uuid = await self._auth_service.create_user(user.login, user.full_name)
+        try:
+            user.pk = pk
+            user.id = created_uuid
+            created = await self._repo.create(user)
+        except Exception as exc:
+            logger.error(f"DB insert failed. Rolling back Authentik user pk={pk}: {exc}")
+            try:
+                await self._auth_service.delete_user(pk)
+            except Exception as delete_exc:
+                logger.error(f"Rollback of user creation failed pk={pk}: {delete_exc}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="User creation failed",
+            ) from exc
+        logger.info(f"User created successfully: pk={created.pk}, user={created}")
         return created
 
     async def update_user(
@@ -86,15 +110,13 @@ class UserService:
         letter: str | None = None,
         graduation_year: int | None = None,
         login: str | None = None,
-        password: str | None = None,
-        permissions: list[PermissionType] | None = None,
         birthday: date | None = None,
-        department: Department | None = None,
-    ) -> User | None:
-        user = await self._repo.get_by_id(user_id)
-        if user is None:
-            logger.warning(f"Пользователь {user_id} не найден для обновления")
-            return None
+        lives_in_dormitory: bool | None = None,
+    ) -> User:
+        old_user = await self.get_user_by_id(user_id)
+        user = deepcopy(old_user)
+        if login or first_name or middle_name or last_name:
+            await self._auth_service.update_user_info(user.pk, login, user.full_name)
         if last_name:
             user.last_name = last_name
         if first_name:
@@ -113,40 +135,129 @@ class UserService:
             user.graduation_year = graduation_year
         if login:
             user.login = login
-        if department:
-            user.department = department
-        if password:
-            password_hash = self._auth_service.hash_password(password)
-            user.password_hash = password_hash
-        if permissions:
-            user.permissions = permissions
         if birthday:
             user.birthday = birthday
+        if lives_in_dormitory is not None:
+            user.lives_in_dormitory = lives_in_dormitory
         updated = await self._repo.update(user)
-        logger.info(f"Пользователь обновлён: {user_id}")
+        if first_name or last_name or middle_name or login:
+            await self._auth_service.update_user_info(updated.pk, login, user.full_name)
+        logger.info(f"User update successful user_id={user_id}")
         return updated
 
-    async def delete(self, user_id: UUID) -> bool:
-        result = await self._repo.delete(user_id)
-        if result:
-            logger.info(f"Пользователь удалён: {user_id}")
-        return result
+    async def delete(self, user_id: UUID) -> None:
+        user = await self.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+        await self._auth_service.delete_user(user.pk)
+        await self._repo.delete(user_id)
+        logger.info(f"User deletion successful user_id={user_id}")
 
-    async def list_users(self, filtering_params: UserFilteringParams, sorting_params: UserSortingParams, offset: int = 0, limit: int = 20) -> list[User]:
-        return await self._repo.list_(offset=offset, limit=limit, sort_by=sorting_params.sort_by.value, order=sorting_params.order.value, **filtering_params.model_dump())
+    async def update_password(self, user_id: UUID, password: str) -> None:
+        user = await self.get_user_by_id(user_id)
+        await self._auth_service.update_user_password(user.pk, password)
+        logger.info(f"User password update successful user_id={user_id}")
 
-    async def count_users(self, filtering_params: UserFilteringParams, sorting_params: UserSortingParams) -> int:
-        return await self._repo.count(**filtering_params.model_dump())
+    async def list_users(
+            self,
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            user_filters: UserFilters = UserFilters()
+    ) -> list[User]:
+        return await self._repo.get_users(pagination_and_sorting, user_filters)
 
-    # ==================== Helper methods (только для отладки/администрирования) ====================
-    
-    def debug_list_keys(self) -> list[str]:
-        if not self._key_manager:
-            return []
-        return list(self._key_manager._keys.keys())
-    
-    def debug_active_kid(self) -> str | None:
-        """Возвращает активный kid (только для отладки!)."""
-        if not self._key_manager:
-            return None
-        return self._key_manager._active_kid
+    async def count_users(
+            self,
+            user_filters: UserFilters = UserFilters()
+    ) -> int:
+        return await self._repo.count_users(user_filters)
+
+    async def get_parents_by_child_id(
+            self, user_id: UUID,
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            user_filters: UserFilters = UserFilters()
+    ) -> list[User]:
+        await self.check_user_exists_by_id_or_raise(user_id)
+        parents = await self._repo.get_user_parents(
+            user_id,
+            pagination_and_sorting,
+            user_filters
+        )
+        return parents
+
+    async def count_parents_by_child_id(
+            self, user_id: UUID,
+            user_filters: UserFilters = UserFilters()
+    ) -> int:
+        await self.check_user_exists_by_id_or_raise(user_id)
+        return await self._repo.count_user_parents(
+            user_id,
+            user_filters
+        )
+
+    async def update_parents_by_child_id(
+            self, user_id: UUID,
+            parent_ids_to_add: list[UUID] | None = None,
+            parent_ids_to_delete: list[UUID] | None = None
+    ) -> None:
+        if parent_ids_to_add is None:
+            parent_ids_to_add = []
+        if parent_ids_to_delete is None:
+            parent_ids_to_delete = []
+        if user_id in parent_ids_to_add or user_id in parent_ids_to_delete:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User cannot be parent of themselves')
+        await self.check_user_exists_by_id_or_raise(user_id)
+        found_parents_to_delete_count = await self._repo.count_user_parents(user_id, UserFilters(ids=parent_ids_to_delete))
+        found_parents_to_add_count = await self._repo.count_user_parents(user_id, UserFilters(ids=parent_ids_to_add))
+        if found_parents_to_add_count > 0 or found_parents_to_delete_count != len(parent_ids_to_delete):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail='Some parents already added or already deleted')
+        await self._repo.update_user_parents(user_id, parent_ids_to_add, parent_ids_to_delete)
+        logger.info(f"User parents update successful user_id={user_id}")
+
+    async def get_children_by_parent_id(
+            self, user_id: UUID,
+            pagination_and_sorting: PaginationAndSorting[UserSortableField],
+            user_filters: UserFilters = UserFilters()
+    ) -> list[User]:
+        await self.check_user_exists_by_id_or_raise(user_id)
+        parents = await self._repo.get_user_children(
+            user_id,
+            pagination_and_sorting,
+            user_filters
+        )
+        return parents
+
+    async def count_children_by_parent_id(
+            self, user_id: UUID,
+            user_filters: UserFilters = UserFilters()
+    ) -> int:
+        await self.check_user_exists_by_id_or_raise(user_id)
+        return await self._repo.count_user_children(
+            user_id,
+            user_filters
+        )
+
+    async def update_children_by_parent_id(
+            self, user_id: UUID,
+            child_ids_to_add: list[UUID] | None = None,
+            child_ids_to_delete: list[UUID] | None = None
+    ) -> None:
+        if child_ids_to_add is None:
+            child_ids_to_add = []
+        if child_ids_to_delete is None:
+            child_ids_to_delete = []
+        if user_id in child_ids_to_add or user_id in child_ids_to_delete:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User cannot be child of themselves')
+        await self.check_user_exists_by_id_or_raise(user_id)
+        found_children_to_delete_count = await self._repo.count_user_children(user_id, UserFilters(ids=child_ids_to_delete))
+        found_children_to_add_count = await self._repo.count_user_children(user_id, UserFilters(ids=child_ids_to_add))
+        if found_children_to_add_count > 0 or found_children_to_delete_count != len(child_ids_to_delete):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail='Some children already added or already deleted')
+        await self._repo.update_user_children(user_id, child_ids_to_add, child_ids_to_delete)
+        logger.info(f"User children update successful user_id={user_id}")
+
+    async def get_child_of_parent(self, child_id: UUID, parent_id: UUID) -> User:
+        await self.check_user_exists_by_id_or_raise(parent_id)
+
+        return await self.get_user_by_id(child_id)
