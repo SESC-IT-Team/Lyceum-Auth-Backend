@@ -51,7 +51,7 @@ async def get_department_workers(
         pagination_and_sorting_params: PaginationAndSortingQueryParams[UserSortableField] = Depends(),
         user_filtering_params: UserFilteringQueryParams = Depends(),
         department_service: DepartmentService = Depends(get_department_service),
-        _: AccessTokenPayload = Depends(Auth([Scope.profile])),
+        _: AccessTokenPayload = Depends(Auth([Scope.auth_users_read])),
         __ = Depends(require_department_admin)
 ) -> UserListResponse:
     department_member_filtering_params = DepartmentMemberFilteringQueryQueryParams(**user_filtering_params.model_dump(), positions=[DepartmentMemberPosition.worker])
@@ -75,14 +75,14 @@ async def get_department_member(
 ) -> DepartmentMemberResponse:
     return DepartmentMemberResponse(**(await department_service.get_department_member(department_name, user_id)).model_dump())
 
-@router.put("/{department_name}/members/{user_id}",status_code=status.HTTP_200_OK)
+@router.put("/{department_name}/members/{user_id}",status_code=status.HTTP_204_NO_CONTENT)
 async def update_department_member(
         department_name: Department, user_id: UUID,
         body: SetDepartmentMemberPositionRequest,
         department_service: DepartmentService = Depends(get_department_service),
         _ = Depends(Auth([Scope.auth_users_update]).restrict_roles_and_return_user([Role.admin]))
-) -> DepartmentMemberResponse:
-    return DepartmentMemberResponse.from_entity(await department_service.update_department_member(department_name, user_id, body.position))
+) -> None:
+    await department_service.update_department_member(department_name, user_id, body.position)
 
 @router.delete("/{department_name}/members/{user_id}",status_code=status.HTTP_204_NO_CONTENT)
 async def delete_department_member(
