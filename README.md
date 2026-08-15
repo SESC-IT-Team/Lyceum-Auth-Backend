@@ -170,7 +170,7 @@ Backend-сервис для централизованного управлен�
 | Поле | Тип | Описание |
 |---|---|---|
 | `user` | User | Данные пользователя |
-| `department` | Department | Идентификатор подразделения |
+| `department` | Department | Подразделение (enum, см. [допустимые значения](#departments-api)) |
 | `position` | DepartmentMemberPosition | `admin` или `worker` |
 | `created_at` | datetime | Время добавления |
 | `updated_at` | datetime | Время последнего обновления |
@@ -569,10 +569,25 @@ Parent
 
 Все эндпоинты подразделений находятся под префиксом `/api/v1/departments/{department_name}`.
 
-Пример для подразделения `it`:
+`{department_name}` — это **строгий enum** (`Department`), принимает только следующие значения:
+
+| Значение | Описание |
+|---|---|
+| `academic_department` | Учебный отдел |
+| `olympiad_support_department` | Отдел сопровождения олимпиад |
+| `medical_station` | Медпункт |
+| `educational_department` | Воспитательный отдел |
+| `library` | Библиотека |
+| `it_department` | IT-отдел |
+| `laboratory_of_tech_teaching_aids` | Лаборатория технических средств обучения |
+| `competitive_selection_department` | Отдел конкурсного отбора |
+| `additional_education_department` | Отдел дополнительного образования |
+| `dormitory` | Общежитие |
+
+Пример для IT-отдела:
 
 ```
-/api/v1/departments/it/members
+/api/v1/departments/it_department/members
 ```
 
 ### Список участников
@@ -597,10 +612,10 @@ Parent
 
 ```
 position        created_at       updated_at
-user_first_name  user_middle_name  user_last_name  user_full_name
-user_grade       user_letter       user_class_name user_graduation_year
-user_login       user_gender       user_lives_in_dormitory
-user_created_at  user_updated_at
+user.first_name  user.middle_name  user.last_name  user.full_name
+user.grade       user.letter       user.class_name user.graduation_year
+user.login       user.gender       user.lives_in_dormitory
+user.created_at  user.updated_at
 ```
 
 Ответ:
