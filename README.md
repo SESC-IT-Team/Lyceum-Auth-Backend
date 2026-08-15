@@ -129,7 +129,7 @@ Backend-сервис для централизованного управлен�
 | `middle_name` | string | Нет | Отчество |
 | `full_name` | string | — | Вычисляется: `last_name first_name middle_name` |
 | `login` | string | Да | Уникальный логин |
-| `roles` | list[Role] | Да | Роли: `admin`, `teacher`, `student`, `staff` |
+| `roles` | list[Role] | Да | Роли: `admin`, `teacher`, `student`, `parent`, `staff`, `guest`, `graduate` |
 | `gender` | Gender | Да | `male` / `female` |
 | `birthday` | date | Нет | Дата рождения |
 | `grade` | int (8–11) | Нет | Класс (для учеников) |
@@ -636,13 +636,15 @@ user_created_at  user_updated_at
 
 #### `GET /api/v1/departments/{department_name}/members/workers`
 
-Возвращает участников подразделения с позицией `worker`.
+Возвращает пользователей подразделения с позицией `worker`.
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_read` + (`admin` или `dept_admin`) |
-| **Параметры** | пагинация, сортировка, фильтрация |
-| **Ответ** | `DepartmentMemberListResponse` |
+| **Доступ** | `auth_users_read` + позиция `admin` в данном подразделении |
+| **Параметры** | пагинация ([поля сортировки — пользовательские](#поля-сортировки-пользователей-sort_by)), фильтрация пользователей |
+| **Ответ** | `UserListResponse` |
+
+> Доступ проверяется через `require_department_admin`: текущий пользователь должен быть участником подразделения с позицией `DepartmentMemberPosition.admin`. Это **позиция внутри подразделения**, не системная роль `admin`.
 
 ---
 
@@ -692,7 +694,7 @@ user_created_at  user_updated_at
 |---|---|---|---|---|
 | GET | `/departments/{dept}/members` | `auth_users_read` | `admin` | Список участников |
 | GET | `/departments/{dept}/members/me` | `profile` | — | Текущий пользователь в подразделении |
-| GET | `/departments/{dept}/members/workers` | `auth_users_read` | `admin`/`dept_admin` | Список работников |
+| GET | `/departments/{dept}/members/workers` | `auth_users_read` | позиция `admin` в подразделении | Список работников |
 | GET | `/departments/{dept}/members/{user_id}` | `auth_users_read` | `admin` | Конкретный участник |
 | PUT | `/departments/{dept}/members/{user_id}` | `auth_users_update` | `admin` | Добавить/изменить позицию |
 | DELETE | `/departments/{dept}/members/{user_id}` | `auth_users_update` | `admin` | Удалить участника |
@@ -751,7 +753,10 @@ Users API не является Identity Provider. Каждый запрос д�
 | `admin` | Полный доступ к управлению пользователями |
 | `teacher` | Преподаватель |
 | `student` | Ученик |
+| `parent` | Родитель |
 | `staff` | Сотрудник |
+| `guest` | Гость |
+| `graduate` | Выпускник |
 
 ### Rate Limiting
 
