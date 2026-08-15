@@ -263,7 +263,7 @@ Backend-сервис для централизованного управлен�
 
 | | |
 |---|---|
-| **Доступ** | `auth_children_read` |
+| **Доступ** | `auth:children:read` |
 | **Параметры** | [пагинация, сортировка, фильтрация](#параметры-пагинации) |
 | **Ответ** | `UserListResponse` |
 
@@ -275,7 +275,7 @@ Backend-сервис для централизованного управлен�
 
 | | |
 |---|---|
-| **Доступ** | `auth_children_read` |
+| **Доступ** | `auth:children:read` |
 | **Ответ** | `UserResponse` |
 
 ---
@@ -288,7 +288,7 @@ Backend-сервис для централизованного управлен�
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_read` + `admin` |
+| **Доступ** | `auth:users:read` + `admin` |
 | **Параметры** | [пагинация, сортировка, фильтрация](#параметры-пагинации) |
 | **Ответ** | `UserListResponse` |
 
@@ -359,7 +359,7 @@ GET /api/v1/users?ids=uuid1&ids=uuid2
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_create` + `admin` |
+| **Доступ** | `auth:users:create` + `admin` |
 | **Тело** | `UserCreate` |
 | **Ответ** | `201 UserResponse` |
 
@@ -411,7 +411,7 @@ GET /api/v1/users?ids=uuid1&ids=uuid2
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_read` + `admin` |
+| **Доступ** | `auth:users:read` + `admin` |
 | **Ответ** | `UserResponse` |
 
 ---
@@ -424,7 +424,7 @@ GET /api/v1/users?ids=uuid1&ids=uuid2
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_update` + `admin` |
+| **Доступ** | `auth:users:read`, `auth:users:update` + `admin` |
 | **Тело** | `UserInfoUpdate` |
 | **Ответ** | `UserResponse` |
 
@@ -449,7 +449,7 @@ GET /api/v1/users?ids=uuid1&ids=uuid2
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_update` + `admin` |
+| **Доступ** | `auth:users:update` + `admin` |
 | **Тело** | `UserPasswordUpdate` |
 | **Ответ** | `204 No Content` |
 
@@ -471,7 +471,7 @@ GET /api/v1/users?ids=uuid1&ids=uuid2
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_delete` |
+| **Доступ** | `auth:users:delete` + `admin` |
 | **Ответ** | `204 No Content` |
 
 ---
@@ -493,7 +493,7 @@ Parent
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_read` + `admin` |
+| **Доступ** | `auth:users:read` + `admin` |
 | **Ответ** | `UserListResponse` |
 
 ---
@@ -504,7 +504,7 @@ Parent
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_read` + `admin` |
+| **Доступ** | `auth:users:update` + `admin` |
 | **Ответ** | `204 No Content` |
 
 ```json
@@ -522,7 +522,7 @@ Parent
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_read` + `admin` |
+| **Доступ** | `auth:users:read` + `admin` |
 | **Ответ** | `UserListResponse` |
 
 ---
@@ -533,7 +533,7 @@ Parent
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_read` + `admin` |
+| **Доступ** | `auth:users:update` + `admin` |
 | **Ответ** | `204 No Content` |
 
 ```json
@@ -550,18 +550,18 @@ Parent
 | Метод | Эндпоинт | Scope | Роль | Описание |
 |---|---|---|---|---|
 | GET | `/users/me` | `profile` | — | Текущий пользователь |
-| GET | `/users/me/children` | `auth_children_read` | — | Дети текущего пользователя |
-| GET | `/users/me/children/{child_id}` | `auth_children_read` | — | Конкретный ребёнок |
-| GET | `/users` | `auth_users_read` | `admin` | Список пользователей |
-| POST | `/users` | `auth_users_create` | `admin` | Создать пользователя |
-| GET | `/users/{user_id}` | `auth_users_read` | `admin` | Получить пользователя |
-| PATCH | `/users/{user_id}` | `auth_users_update` | `admin` | Обновить пользователя |
-| PUT | `/users/{user_id}/password` | `auth_users_update` | `admin` | Обновить пароль |
-| DELETE | `/users/{user_id}` | `auth_users_delete` | — | Удалить пользователя |
-| GET | `/users/{user_id}/parents` | `auth_users_read` | `admin` | Родители пользователя |
-| PATCH | `/users/{user_id}/parents` | `auth_users_read` | `admin` | Обновить родителей |
-| GET | `/users/{user_id}/children` | `auth_users_read` | `admin` | Дети пользователя |
-| PATCH | `/users/{user_id}/children` | `auth_users_read` | `admin` | Обновить детей |
+| GET | `/users/me/children` | `auth:children:read` | — | Дети текущего пользователя |
+| GET | `/users/me/children/{child_id}` | `auth:children:read` | — | Конкретный ребёнок |
+| GET | `/users` | `auth:users:read` | `admin` | Список пользователей |
+| POST | `/users` | `auth:users:create` | `admin` | Создать пользователя |
+| GET | `/users/{user_id}` | `auth:users:read` | `admin` | Получить пользователя |
+| PATCH | `/users/{user_id}` | `auth:users:read`, `auth:users:update` | `admin` | Обновить пользователя |
+| PUT | `/users/{user_id}/password` | `auth:users:update` | `admin` | Обновить пароль |
+| DELETE | `/users/{user_id}` | `auth:users:delete` | `admin` | Удалить пользователя |
+| GET | `/users/{user_id}/parents` | `auth:users:read` | `admin` | Родители пользователя |
+| PATCH | `/users/{user_id}/parents` | `auth:users:update` | `admin` | Обновить родителей |
+| GET | `/users/{user_id}/children` | `auth:users:read` | `admin` | Дети пользователя |
+| PATCH | `/users/{user_id}/children` | `auth:users:update` | `admin` | Обновить детей |
 
 ---
 
@@ -598,7 +598,7 @@ Parent
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_read` + `admin` |
+| **Доступ** | `auth:users:read` + `admin` |
 | **Параметры** | пагинация, сортировка, фильтрация пользователей + `positions` |
 | **Ответ** | `DepartmentMemberListResponse` |
 
@@ -655,7 +655,7 @@ user.created_at  user.updated_at
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_read` + позиция `admin` в данном подразделении |
+| **Доступ** | `auth:users:read` + позиция `admin` в данном подразделении |
 | **Параметры** | пагинация ([поля сортировки — пользовательские](#поля-сортировки-пользователей-sort_by)), фильтрация пользователей |
 | **Ответ** | `UserListResponse` |
 
@@ -669,7 +669,7 @@ user.created_at  user.updated_at
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_read` + `admin` |
+| **Доступ** | `auth:users:read` + `admin` |
 | **Ответ** | `DepartmentMemberResponse` |
 
 ---
@@ -680,7 +680,7 @@ user.created_at  user.updated_at
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_update` + `admin` |
+| **Доступ** | `auth:users:update` + `admin` |
 | **Тело** | `SetDepartmentMemberPositionRequest` |
 | **Ответ** | `204 No Content` |
 
@@ -698,7 +698,7 @@ user.created_at  user.updated_at
 
 | | |
 |---|---|
-| **Доступ** | `auth_users_update` + `admin` |
+| **Доступ** | `auth:users:update` + `admin` |
 | **Ответ** | `204 No Content` |
 
 ---
@@ -707,12 +707,12 @@ user.created_at  user.updated_at
 
 | Метод | Эндпоинт | Scope | Роль | Описание |
 |---|---|---|---|---|
-| GET | `/departments/{dept}/members` | `auth_users_read` | `admin` | Список участников |
+| GET | `/departments/{dept}/members` | `auth:users:read` | `admin` | Список участников |
 | GET | `/departments/{dept}/members/me` | `profile` | — | Текущий пользователь в подразделении |
-| GET | `/departments/{dept}/members/workers` | `auth_users_read` | позиция `admin` в подразделении | Список работников |
-| GET | `/departments/{dept}/members/{user_id}` | `auth_users_read` | `admin` | Конкретный участник |
-| PUT | `/departments/{dept}/members/{user_id}` | `auth_users_update` | `admin` | Добавить/изменить позицию |
-| DELETE | `/departments/{dept}/members/{user_id}` | `auth_users_update` | `admin` | Удалить участника |
+| GET | `/departments/{dept}/members/workers` | `auth:users:read` | позиция `admin` в подразделении | Список работников |
+| GET | `/departments/{dept}/members/{user_id}` | `auth:users:read` | `admin` | Конкретный участник |
+| PUT | `/departments/{dept}/members/{user_id}` | `auth:users:update` | `admin` | Добавить/изменить позицию |
+| DELETE | `/departments/{dept}/members/{user_id}` | `auth:users:update` | `admin` | Удалить участника |
 
 ---
 
@@ -755,11 +755,11 @@ Users API не является Identity Provider. Каждый запрос д�
 | Scope | Описание |
 |---|---|
 | `profile` | Базовый доступ к собственным данным |
-| `auth_users_read` | Чтение данных других пользователей |
-| `auth_users_create` | Создание пользователей |
-| `auth_users_update` | Обновление данных пользователей |
-| `auth_users_delete` | Удаление пользователей |
-| `auth_children_read` | Чтение данных собственных детей |
+| `auth:users:read` | Чтение данных других пользователей |
+| `auth:users:create` | Создание пользователей |
+| `auth:users:update` | Обновление данных пользователей |
+| `auth:users:delete` | Удаление пользователей |
+| `auth:children:read` | Чтение данных собственных детей |
 
 ### Роли
 

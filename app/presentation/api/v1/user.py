@@ -102,7 +102,7 @@ async def update_user(
     user_id: UUID,
     body: UserInfoUpdate,
     user_service: UserService = Depends(get_user_service),
-    _: User = Depends(Auth([Scope.auth_users_update]).restrict_roles_and_return_user([Role.admin])),
+    _: User = Depends(Auth([Scope.auth_users_read, Scope.auth_users_update]).restrict_roles_and_return_user([Role.admin])),
 ) -> UserResponse:
     updated = await user_service.update_user(
         user_id,
@@ -134,7 +134,7 @@ async def update_password(
 async def delete_user(
         user_id: UUID,
         user_service: UserService = Depends(get_user_service),
-        _: User = Depends(Auth([Scope.auth_users_delete])),
+        _: User = Depends(Auth([Scope.auth_users_delete]).restrict_roles_and_return_user([Role.admin])),
 ) -> None:
     await user_service.delete(user_id)
 
@@ -163,7 +163,7 @@ async def update_user_parents(
         user_id: UUID,
         body: UpdateUserParentsOrChildrenRequest,
         user_service: UserService = Depends(get_user_service),
-        _: User = Depends(Auth([Scope.auth_users_read]).restrict_roles_and_return_user([Role.admin]))
+        _: User = Depends(Auth([Scope.auth_users_update]).restrict_roles_and_return_user([Role.admin]))
 ) -> None:
     await user_service.update_parents_by_child_id(user_id, body.ids_to_add, body.ids_to_delete)
 
@@ -192,7 +192,7 @@ async def update_user_children(
         user_id: UUID,
         body: UpdateUserParentsOrChildrenRequest,
         user_service: UserService = Depends(get_user_service),
-        _: User = Depends(Auth([Scope.auth_users_read]).restrict_roles_and_return_user([Role.admin]))
+        _: User = Depends(Auth([Scope.auth_users_update]).restrict_roles_and_return_user([Role.admin]))
 ) -> None:
     await user_service.update_children_by_parent_id(user_id, body.ids_to_add, body.ids_to_delete)
 
