@@ -16,7 +16,7 @@ from app.presentation.schemas.user import UserCreate, UserInfoUpdate, UserRespon
 from app.presentation.dependencies import Auth
 from sesc_auth_sdk.schemas.token import AccessTokenPayload
 
-router = APIRouter(prefix="/users", tags=["Users"])
+router = APIRouter(tags=["Users"])
 
 
 @router.get("/me", response_model=UserResponse)

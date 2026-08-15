@@ -32,7 +32,7 @@ def get_user_service(
     return UserService(user_repository=UserRepository(db), authentik_service=auth_service)
 
 class Auth(LyceumAuth):
-    _get_jwks_manager = create_jwks_manager_dependency(jwks_manager)
+    get_jwks_manager = create_jwks_manager_dependency(jwks_manager)
 
     # pyrefly: ignore [bad-override]
     async def return_user(
