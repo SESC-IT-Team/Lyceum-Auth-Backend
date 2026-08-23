@@ -28,7 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router, prefix="/api")
+app.include_router(api_router)
 
 # pyrefly: ignore [bad-argument-type]
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
