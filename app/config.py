@@ -1,6 +1,7 @@
 from typing import Literal, Any
 import logging
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from sesc_auth_sdk.settings import TokenValidationSettings
@@ -36,7 +37,9 @@ class Settings(BaseSettings):
 
     root_path: str = '/'
 
-    token_validation_settings: TokenValidationSettings = TokenValidationSettings(_env_file='.env')
+    token_validation_settings: TokenValidationSettings = Field(
+        default_factory=lambda: TokenValidationSettings(_env_file=".env")
+    )
 
     sa_auth_admin_app_api_token: str
 
