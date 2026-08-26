@@ -2,7 +2,7 @@ FROM python:3.13.14-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache git curl bash
+RUN apk add --no-cache git curl bash ca-certificates
 
 RUN pip install --no-cache-dir uv
 COPY uv.lock pyproject.toml README.md ./
