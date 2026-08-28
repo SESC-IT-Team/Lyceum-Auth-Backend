@@ -25,7 +25,7 @@ class Settings(BaseSettings):
 
     admin_login: str = "admin"
     admin_password: str = "admin"
-    authentik_url: str = "http://authentik:9000"
+    internal_authentik_url: str = "http://authentik:9000"
     users_path: str = ''
     env_file_path: str = ".env"
     allowed_origins:list[str] = ["http://localhost:8000"]

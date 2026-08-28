@@ -16,7 +16,7 @@ async def create_or_update_admin() -> None:
     async with async_session_factory() as session:
         user_repository = UserRepository(session)
 
-        auth_service = AuthentikService(settings.authentik_url, settings.users_path, settings.sa_auth_admin_app_api_token)
+        auth_service = AuthentikService(settings.internal_authentik_url, settings.users_path, settings.sa_auth_admin_app_api_token)
         user_service = UserService(user_repository, auth_service)
         logger.info('Creating admin user')
         try:

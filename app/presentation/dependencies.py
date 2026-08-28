@@ -23,7 +23,7 @@ limiter = Limiter(key_func=get_remote_address)
 jwks_manager = JWKSManager(settings.token_validation_settings)
 
 def get_authentik_service() -> AuthentikService:
-    return AuthentikService(settings.authentik_url, settings.users_path, settings.sa_auth_admin_app_api_token)
+    return AuthentikService(settings.internal_authentik_url, settings.users_path, settings.sa_auth_admin_app_api_token)
 
 def get_user_service(
         db: AsyncSession = Depends(get_db),
