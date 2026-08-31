@@ -25,7 +25,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 
 
-# Set database connection parameters from settings
+config.set_section_option(section, "sqlalchemy.url", settings.database_url)
 config.set_section_option(section, "POSTGRES_DB", settings.postgres_db)
 config.set_section_option(section, "POSTGRES_HOST", settings.postgres_host)
 config.set_section_option(section, "POSTGRES_PORT", str(settings.postgres_port))
