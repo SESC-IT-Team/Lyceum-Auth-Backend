@@ -1,5 +1,6 @@
 from typing import Literal
 import logging
+from urllib.parse import quote_plus
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -12,29 +13,27 @@ logger = logging.getLogger(__name__)
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    database_url_override: str | None = Field(default=None, validation_alias="DATABASE_URL")
-
     postgres_host: str
     postgres_port: int = 5432
     postgres_user: str
     postgres_password: str
     postgres_db: str
 
-    @property
-    def database_url(self) -> str:
-        if self.database_url_override is not None:
-            return self.database_url_override
+    def _build_database_url(self, driver: str) -> str:
+        user = quote_plus(self.postgres_user)
+        password = quote_plus(self.postgres_password)
         return (
-            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
+            f"{driver}://{user}:{password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
 
     @property
+    def database_url(self) -> str:
+        return self._build_database_url("postgresql+asyncpg")
+
+    @property
     def sync_database_url(self) -> str:
-        url = self.database_url
-        if url.startswith("postgresql+asyncpg://"):
-            return url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
-        return url
+        return self._build_database_url("postgresql+psycopg2")
 
     admin_login: str = "admin"
     admin_password: str = "admin"
