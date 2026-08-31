@@ -29,6 +29,13 @@ class Settings(BaseSettings):
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
 
+    @property
+    def sync_database_url(self) -> str:
+        url = self.database_url
+        if url.startswith("postgresql+asyncpg://"):
+            return url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+        return url
+
     admin_login: str = "admin"
     admin_password: str = "admin"
     internal_authentik_url: str = "http://authentik:9000"

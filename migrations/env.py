@@ -2,7 +2,6 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-from sqlalchemy.dialects import postgresql
 
 from alembic import context
 
@@ -11,21 +10,13 @@ from app.infrastructure.models import *
 
 assert len(Base.metadata.tables) > 0, "No tables in Base.metadata - check model imports"
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
 config = context.config
 section = config.config_ini_section
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-
-
-config.set_section_option(section, "sqlalchemy.url", settings.database_url)
+config.set_section_option(section, "sqlalchemy.url", settings.sync_database_url)
 config.set_section_option(section, "POSTGRES_DB", settings.postgres_db)
 config.set_section_option(section, "POSTGRES_HOST", settings.postgres_host)
 config.set_section_option(section, "POSTGRES_PORT", str(settings.postgres_port))
